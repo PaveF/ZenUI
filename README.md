@@ -1,4 +1,4 @@
-# Rayfield UI for Real
+# ZenUI
 
 A [Rayfield](https://github.com/shlexware/Rayfield)-style UI library built for the **Real** executor.
 
@@ -23,10 +23,10 @@ Classic dark theme, left sidebar tabs, green accent, toggle/slider/dropdown/keyb
 
 ## Usage
 
-Copy `rayfield_ui.luau` into Real's **Scripts** folder and run it, or paste the file contents into the executor, then run:
+Copy `zenui.luau` into Real's **Scripts** folder and run it, or paste the file contents into the executor, then run:
 
 ```lua
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/YOUR_USER/rayfield-ui-real/main/rayfield_ui.luau"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/YOUR_USER/zenui/main/zenui.luau"))()
 
 local lib = Library.new({ Name = "My Hub", Theme = "Blue", Debug = false })
 
