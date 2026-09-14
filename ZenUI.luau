@@ -1,14 +1,14 @@
---!nonstrict
--- ZenUI - Modern monochrome Luau UI library
--- Usage:
---   local Library = (loadstring or require)(...)
---   local lib = Library.new({ Name = "My Hub", Theme = "Dark" })
---   lib:SetTheme("Aurora") -- live-switch any built-in theme
---   print(table.concat(lib:GetThemes(), ", "))
---   local Window = lib:CreateWindow({ Name = "My Hub", ConfigurationSaving = true })
---   local Tab = Window:CreateTab({ Name = "Main", Icon = "home" })
---   Tab:CreateToggle({ Name = "Speed", CurrentValue = false, Callback = function(v) end, Keybind = "F", Flag = "Speed" })
---   lib:SaveConfig("main"); lib:LoadConfig("main")
+
+
+
+
+
+
+
+
+
+
+
 
 local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
@@ -37,7 +37,7 @@ local function safe_call(func, ...)
 	return ok, unpack(results)
 end
 
--- Try filesystem API from getgenv() first, then the real globals, then _G.
+
 local writefile = (type(getgenv().writefile) == "function") and getgenv().writefile
 	or (type(rawget(_G, "writefile")) == "function" and rawget(_G, "writefile")) or nil
 local readfile = (type(getgenv().readfile) == "function") and getgenv().readfile
@@ -82,8 +82,8 @@ local Themes = {
 	},
 }
 
--- Backward-compatible theme names. They intentionally resolve to the
--- monochrome palettes so ZenUI stays white/dark even with old configs.
+
+
 Themes.Emerald = Themes.Dark
 Themes.Midnight = Themes.Dark
 Themes.Blue = Themes.Dark
@@ -179,7 +179,7 @@ local function CreateIcon(parent: Instance, iconName: string?, color: Color3?)
 	local iconColor = color or Library.Theme.TextMuted
 	local name = string.lower(tostring(iconName or "menu"))
 
-	-- Vector icons: built from Frames/UIStrokes so they do not depend on emoji fonts.
+	
 	if name == "home" then
 		IconBar(icon, UDim2.new(0, 12, 0, 9), UDim2.new(0, 7, 0, 10), 0, iconColor)
 		local roofL = IconBar(icon, UDim2.new(0, 10, 0, 2), UDim2.new(0, 5, 0, 8), -42, iconColor)
@@ -226,7 +226,7 @@ local function CreateIcon(parent: Instance, iconName: string?, color: Color3?)
 		IconBar(icon,UDim2.new(0,9,0,2),UDim2.new(0,14,0,16),-40,iconColor)
 		IconBar(icon,UDim2.new(0,8,0,2),UDim2.new(0,9,0,5),90,iconColor)
 	else
-		-- Generic clean menu icon for unknown names.
+		
 		for y=7,17,5 do IconBar(icon, UDim2.new(0, 14, 0, 2), UDim2.new(0, 6, 0, y), 0, iconColor) end
 	end
 
@@ -242,7 +242,7 @@ local function SetIconColor(icon: GuiObject, color: Color3)
 			if inst:IsA("UIStroke") then
 				Tween(inst, { Color = color }, 0.14)
 			elseif inst:IsA("Frame") then
-				-- Preserve cutouts that intentionally match the background.
+				
 				if not inst:GetAttribute("ZenIconCutout") then
 					Tween(inst, { BackgroundColor3 = color }, 0.14)
 				end
@@ -275,7 +275,7 @@ Create = function(className: string, properties: { [string]: any }): Instance
 		end
 	end
 
-	-- Tag palette-bound properties so SetTheme can recolor the live UI safely.
+	
 	for propertyName, value in pairs({
 		BackgroundColor3 = properties.BackgroundColor3,
 		TextColor3 = properties.TextColor3,
@@ -414,7 +414,7 @@ local function FadeRecursive(root: Instance, transparency: number, duration: num
 	end
 end
 
--- Serialize a value so it survives JSON roundtrips (Color3 -> "#hex"-style array).
+
 local function serialize(v)
 	local t = typeof(v)
 	if t == "Color3" then
@@ -479,13 +479,13 @@ function Library:Destroy()
 	Log("destroyed")
 end
 
--- Top-level re-entry guard: re-running the file must not stack a second menu.
+
 if getgenv().Library and type(getgenv().Library.Destroy) == "function" then
 	pcall(function() getgenv().Library:Destroy() end)
 end
 
--- Also remove any orphaned ZenUI ScreenGui left behind by an interrupted/older run.
--- This prevents stray grey/old UI fragments from remaining on the background.
+
+
 pcall(function()
 	local guiParent = safe_gethui()
 	for _, child in ipairs(guiParent:GetChildren()) do
@@ -570,7 +570,7 @@ function Library.new(settings)
 	return Library
 end
 
--- ============================= Config (filesystem) =============================
+
 
 local function WriteConfig(name)
 	if not Library.ConfigurationSaving then return end
@@ -649,7 +649,7 @@ function Library:ListConfigs()
 	return {}
 end
 
--- ============================= Window =============================
+
 
 function Library:CreateWindow(options)
 	options = options or {}
@@ -695,7 +695,7 @@ function Library:CreateWindow(options)
 	pcall(function() WindowGradient:SetAttribute("ZenGradient", true) end)
 
 	local MainScale = Create("UIScale", { Scale = 0.90, Parent = MainFrame })
-	-- No internal shadow/ambient blocks: keep the UI background completely clean.
+	
 
 	local Header = Create("Frame", {
 		Name = "Header",
@@ -706,7 +706,7 @@ function Library:CreateWindow(options)
 		ClipsDescendants = true,
 		Parent = MainFrame,
 	})
-	-- Keep the top of the window visibly rounded even though the header spans the full width.
+	
 	Corner(Header, 18)
 	Create("UIGradient", {
 		Rotation = 0,
@@ -1036,7 +1036,7 @@ function Library:CreateWindow(options)
 		end
 	end)
 
-	-- ============================= Tabs =============================
+	
 
 	function Window:CreateTab(tabOptions)
 		tabOptions = tabOptions or {}
@@ -1147,7 +1147,7 @@ function Library:CreateWindow(options)
 
 		table.insert(Window.Tabs, { Button = TabButton, Page = Page, Accent = TabAccent, Icon = TabIcon, Text = TabText, Badge = Badge, Name = TabName, PageScale = PageScale })
 
-		-- ============================= Toggle =============================
+		
 
 		function Tab:CreateToggle(tOpts)
 			local Toggle: { [string]: any } = { Value = tOpts.CurrentValue or false }
@@ -1237,7 +1237,7 @@ function Library:CreateWindow(options)
 
 			AddConnection(Btn.MouseEnter:Connect(function() Tween(Container, { BackgroundColor3 = Library.Theme.ElementHover }, 0.16) end))
 			AddConnection(Btn.MouseLeave:Connect(function() Tween(Container, { BackgroundColor3 = Library.Theme.Element }, 0.16) end))
-			-- Keep the switch track fixed-size so the white knob never appears to collapse on press.
+			
 			AddConnection(Btn.MouseButton1Click:Connect(function()
 				Toggle:Set(not Toggle.Value)
 			end))
@@ -1261,7 +1261,7 @@ function Library:CreateWindow(options)
 			return Toggle
 		end
 
-		-- ============================= Slider =============================
+		
 
 		function Tab:CreateSlider(sOpts)
 			sOpts = sOpts or {}
@@ -1383,7 +1383,7 @@ function Library:CreateWindow(options)
 			return Slider
 		end
 
-		-- ============================= Dropdown =============================
+		
 
 		function Tab:CreateDropdown(dOpts)
 			local Dropdown: { [string]: any } = { Value = dOpts.CurrentOption, Options = dOpts.Options or {} }
@@ -1542,7 +1542,7 @@ function Library:CreateWindow(options)
 			return Dropdown
 		end
 
-		-- ============================= Keybind =============================
+		
 
 		function Tab:CreateKeybind(kOpts)
 			local Keybind: { [string]: any } = { Value = kOpts.CurrentKeybind or "None" }
@@ -1635,7 +1635,7 @@ function Library:CreateWindow(options)
 			return Keybind
 		end
 
-		-- ============================= TextBox =============================
+		
 
 		function Tab:CreateTextBox(tOpts)
 			tOpts = tOpts or {}
@@ -1688,7 +1688,7 @@ function Library:CreateWindow(options)
 			return tb
 		end
 
-		-- ============================= Button =============================
+		
 
 		function Tab:CreateButton(bOpts)
 			bOpts = bOpts or {}
@@ -1719,7 +1719,7 @@ function Library:CreateWindow(options)
 			return handle
 		end
 
-		-- ============================= Label / Paragraph / Section / Line =============================
+		
 
 		function Tab:CreateLabel(lOpts)
 			local Lbl = Create("TextLabel", {
@@ -1807,7 +1807,7 @@ function Library:CreateWindow(options)
 			})
 		end
 
-		-- ============================= Color Picker =============================
+		
 
 		function Tab:CreateColorPicker(cOpts)
 			local Picker: { [string]: any } = { Value = cOpts.Color or Color3.new(1, 1, 1) }
@@ -1956,7 +1956,7 @@ function Library:CreateWindow(options)
 	return Window
 end
 
--- ============================= Notifications =============================
+
 
 function Library:Notify(options)
 	options = options or {}
