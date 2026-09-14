@@ -11,6 +11,8 @@ It is designed to give Roblox projects and scripts a polished control-panel expe
 - a floating reopen button after closing
 - searchable tabs and controls
 - live theme switching
+- automatic scrolling when a page becomes taller than the available UI space
+- scrollable tab navigation when many tabs are registered
 - notifications
 - configuration saving/loading
 - toggles, sliders, dropdowns, keybinds, text boxes, buttons, labels, paragraphs, sections, separators, and color pickers
@@ -824,6 +826,11 @@ GuiObject:SetAttribute("ZenSearchText", "Your Search Text")
 This is primarily useful for contributors extending the library.
 
 ---
+
+
+### Small/resized UI and scrolling
+
+Pages automatically use vertical scrolling when the window is resized or the UI scale is reduced. Tab navigation also becomes scrollable when enough tabs are registered to exceed the sidebar height. Controls created inside columns remain part of the page content and are included in layout/search handling.
 
 # Dragging
 
