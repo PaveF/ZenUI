@@ -804,9 +804,9 @@ function Library:CreateWindow(options)
 		AddConnection(b.MouseLeave:Connect(function() Tween(b, {Size = UDim2.new(0,34,0,34), Position = UDim2.new(1,xOffset,0.5,-17), BackgroundColor3 = Library.Theme.Element}, 0.14) end))
 		return b
 	end
-	local ThemeButton = MakeHeaderButton("Theme", "◌", -116)
-	MinimizeButton = MakeHeaderButton("Minimize", "—", -76)
-	CloseButton = MakeHeaderButton("Close", "×", -36)
+	local ThemeButton = MakeHeaderButton("Theme", "◌", -126)
+	MinimizeButton = MakeHeaderButton("Minimize", "—", -86)
+	CloseButton = MakeHeaderButton("Close", "×", -46)
 
 	CycleTheme = function()
 		local names = Library:GetThemes()
