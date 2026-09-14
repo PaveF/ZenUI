@@ -5,7 +5,7 @@
 --   lib:SetTheme("Aurora") -- live-switch any built-in theme
 --   print(table.concat(lib:GetThemes(), ", "))
 --   local Window = lib:CreateWindow({ Name = "My Hub", ConfigurationSaving = true })
---   local Tab = Window:CreateTab({ Name = "Main" })
+--   local Tab = Window:CreateTab({ Name = "Main", Icon = "home" })
 --   Tab:CreateToggle({ Name = "Speed", CurrentValue = false, Callback = function(v) end, Keybind = "F", Flag = "Speed" })
 --   lib:SaveConfig("main"); lib:LoadConfig("main")
 
@@ -196,75 +196,120 @@ local function GlowDot(parent, size, position, color, transparency)
 	return dot
 end
 
-local function IconPart(parent, size, position, rotation, color, transparency)
-	local part = Create("Frame", {
+local function MarkIconPart(inst: Instance)
+	pcall(function() inst:SetAttribute("ZenIconPart", true) end)
+	return inst
+end
+
+local function IconBar(parent: Instance, size: UDim2, position: UDim2, rotation: number?, color: Color3)
+	local bar = Create("Frame", {
 		Size = size,
 		Position = position,
 		Rotation = rotation or 0,
-		BackgroundColor3 = color or Library.Theme.TextMuted,
-		BackgroundTransparency = transparency or 0,
+		BackgroundColor3 = color,
 		BorderSizePixel = 0,
-		AnchorPoint = Vector2.new(0.5, 0.5),
 		Parent = parent,
 	})
-	return part
+	return MarkIconPart(bar)
 end
 
-local function CreateIcon(parent, name)
+local function IconCircle(parent: Instance, size: UDim2, position: UDim2, color: Color3, stroke: boolean?)
+	local circle = Create("Frame", {
+		Size = size,
+		Position = position,
+		BackgroundColor3 = stroke and Library.Theme.Background or color,
+		BackgroundTransparency = stroke and 1 or 0,
+		BorderSizePixel = 0,
+		Parent = parent,
+	})
+	Corner(circle, 99)
+	if stroke then
+		local st = Create("UIStroke", { Color = color, Thickness = 1.6, Transparency = 0, Parent = circle })
+		MarkIconPart(st)
+	end
+	return MarkIconPart(circle)
+end
+
+local function CreateIcon(parent: Instance, iconName: string?, color: Color3?)
 	local icon = Create("Frame", {
-		Name = "Icon",
 		Size = UDim2.new(0, 26, 0, 26),
-		Position = UDim2.new(0, 10, 0.5, -13),
 		BackgroundTransparency = 1,
 		BorderSizePixel = 0,
 		Parent = parent,
 	})
+	local iconColor = color or Library.Theme.TextMuted
+	local name = string.lower(tostring(iconName or "menu"))
 
-	local color = Library.Theme.TextMuted
-	local key = string.lower(tostring(name or "grid"))
-
-	local function dot(x, y, size)
-		local d = Create("Frame", { Size=UDim2.new(0,size,0,size), Position=UDim2.new(0,x,0,y), AnchorPoint=Vector2.new(0.5,0.5), BackgroundColor3=color, BorderSizePixel=0, Parent=icon })
-		Corner(d, size)
-		return d
-	end
-
-	if key == "home" then
-		IconPart(icon, UDim2.new(0, 10, 0, 8), UDim2.new(0.5, 0, 0.58, 0), 45, color)
-		IconPart(icon, UDim2.new(0, 10, 0, 8), UDim2.new(0.5, 0, 0.58, 0), -45, color)
-		local body=Create("Frame",{Size=UDim2.new(0,10,0,8),Position=UDim2.new(0.5,-5,0.62,-1),BackgroundColor3=color,BorderSizePixel=0,Parent=icon}); Corner(body,2)
-	elseif key == "user" or key == "profile" then
-		dot(13, 8, 7)
-		local body=Create("Frame",{Size=UDim2.new(0,13,0,8),Position=UDim2.new(0.5,-6.5,0.72,-3),BackgroundColor3=color,BorderSizePixel=0,Parent=icon}); Corner(body,5)
-	elseif key == "users" then
-		dot(10, 9, 6); dot(17, 10, 6)
-		local a=Create("Frame",{Size=UDim2.new(0,9,0,6),Position=UDim2.new(0.5,-7,0.74,-2),BackgroundColor3=color,BorderSizePixel=0,Parent=icon}); Corner(a,4)
-		local b=Create("Frame",{Size=UDim2.new(0,9,0,6),Position=UDim2.new(0.5,0,0.74,-2),BackgroundColor3=color,BorderSizePixel=0,Parent=icon}); Corner(b,4)
-	elseif key == "settings" then
-		local ring=Create("Frame",{Size=UDim2.new(0,14,0,14),Position=UDim2.new(0.5,-7,0.5,-7),BackgroundTransparency=1,BorderSizePixel=2,BorderColor3=color,Parent=icon}); Corner(ring,14)
-		dot(13,13,5)
-	elseif key == "shield" then
-		local shield=Create("Frame",{Size=UDim2.new(0,14,0,14),Position=UDim2.new(0.5,-7,0.5,-7),BackgroundColor3=color,BorderSizePixel=0,Parent=icon}); Corner(shield,5)
-		IconPart(icon, UDim2.new(0,2,0,7), UDim2.new(0.5,0,0.54,1), 45, Library.Theme.Element, 0)
-	elseif key == "target" or key == "combat" then
-		local outer=Create("Frame",{Size=UDim2.new(0,16,0,16),Position=UDim2.new(0.5,-8,0.5,-8),BackgroundTransparency=1,BorderSizePixel=2,BorderColor3=color,Parent=icon}); Corner(outer,16)
-		local inner=Create("Frame",{Size=UDim2.new(0,7,0,7),Position=UDim2.new(0.5,-3.5,0.5,-3.5),BackgroundColor3=color,BorderSizePixel=0,Parent=icon}); Corner(inner,7)
-	elseif key == "monitor" then
-		local screen=Create("Frame",{Size=UDim2.new(0,15,0,10),Position=UDim2.new(0.5,-7.5,0.5,-7),BackgroundTransparency=1,BorderSizePixel=2,BorderColor3=color,Parent=icon}); Corner(screen,2)
-		IconPart(icon,UDim2.new(0,2,0,5),UDim2.new(0.5,0,0.78,0),0,color)
-	elseif key == "folder" then
-		local body=Create("Frame",{Size=UDim2.new(0,17,0,12),Position=UDim2.new(0.5,-8.5,0.53,-3),BackgroundColor3=color,BorderSizePixel=0,Parent=icon}); Corner(body,3)
-		local tab=Create("Frame",{Size=UDim2.new(0,8,0,4),Position=UDim2.new(0,3,0,-1),BackgroundColor3=color,BorderSizePixel=0,Parent=body}); Corner(tab,2)
-	elseif key == "code" then
-		IconPart(icon,UDim2.new(0,2,0,8),UDim2.new(0.30,0,0.5,0),-40,color)
-		IconPart(icon,UDim2.new(0,2,0,8),UDim2.new(0.70,0,0.5,0),40,color)
-		IconPart(icon,UDim2.new(0,2,0,8),UDim2.new(0.5,0,0.5,0),15,color)
+	-- Vector icons: built from Frames/UIStrokes so they do not depend on emoji fonts.
+	if name == "home" then
+		IconBar(icon, UDim2.new(0, 12, 0, 9), UDim2.new(0, 7, 0, 10), 0, iconColor)
+		local roofL = IconBar(icon, UDim2.new(0, 10, 0, 2), UDim2.new(0, 5, 0, 8), -42, iconColor)
+		local roofR = IconBar(icon, UDim2.new(0, 10, 0, 2), UDim2.new(0, 11, 0, 2), 42, iconColor)
+		IconBar(icon, UDim2.new(0, 3, 0, 6), UDim2.new(0, 11, 0, 13), 0, Library.Theme.Background)
+	elseif name == "user" or name == "player" then
+		IconCircle(icon, UDim2.new(0, 7, 0, 7), UDim2.new(0, 9.5, 0, 3), iconColor, false)
+		local body = IconBar(icon, UDim2.new(0, 14, 0, 9), UDim2.new(0, 6, 0, 12), 0, iconColor)
+		Corner(body, 7)
+	elseif name == "users" then
+		IconCircle(icon, UDim2.new(0, 6, 0, 6), UDim2.new(0, 5, 0, 4), iconColor, false)
+		IconCircle(icon, UDim2.new(0, 6, 0, 6), UDim2.new(0, 15, 0, 6), iconColor, false)
+		local b1=IconBar(icon, UDim2.new(0, 10, 0, 8), UDim2.new(0, 3, 0, 13), 0, iconColor); Corner(b1,6)
+		local b2=IconBar(icon, UDim2.new(0, 9, 0, 7), UDim2.new(0, 14, 0, 14), 0, iconColor); Corner(b2,6)
+	elseif name == "settings" or name == "gear" then
+		IconCircle(icon, UDim2.new(0, 13, 0, 13), UDim2.new(0, 6.5, 0, 6.5), iconColor, true)
+		IconCircle(icon, UDim2.new(0, 5, 0, 5), UDim2.new(0, 11, 0, 11), iconColor, true)
+		for _, cfg in ipairs({{10,2,0},{10,15,0},{2,10,90},{15,10,90}}) do IconBar(icon, UDim2.new(0, 5, 0, 2), UDim2.new(0,cfg[1],0,cfg[2]), cfg[3], iconColor) end
+	elseif name == "target" or name == "crosshair" then
+		IconCircle(icon, UDim2.new(0, 17, 0, 17), UDim2.new(0, 4.5, 0, 4.5), iconColor, true)
+		IconCircle(icon, UDim2.new(0, 9, 0, 9), UDim2.new(0, 8.5, 0, 8.5), iconColor, true)
+		IconBar(icon, UDim2.new(0, 20, 0, 1), UDim2.new(0,3,0,12.5), 0, iconColor)
+		IconBar(icon, UDim2.new(0, 1, 0, 20), UDim2.new(0,12.5,0,3), 0, iconColor)
+	elseif name == "sword" or name == "combat" then
+		IconBar(icon, UDim2.new(0, 18, 0, 3), UDim2.new(0, 4, 0, 9), 45, iconColor)
+		IconBar(icon, UDim2.new(0, 3, 0, 8), UDim2.new(0, 8, 0, 15), 45, iconColor)
+		IconBar(icon, UDim2.new(0, 10, 0, 2), UDim2.new(0, 7, 0, 15), 45, iconColor)
+	elseif name == "shield" then
+		local sh = Create("Frame", { Size=UDim2.new(0,14,0,16), Position=UDim2.new(0,6,0,5), BackgroundColor3=iconColor, BorderSizePixel=0, Parent=icon })
+		Corner(sh,5); MarkIconPart(sh)
+		local cut = Create("Frame", { Size=UDim2.new(0,10,0,12), Position=UDim2.new(0,8,0,7), BackgroundColor3=Library.Theme.Background, BorderSizePixel=0, Parent=icon })
+		Corner(cut,4); MarkIconPart(cut)
+		IconBar(icon, UDim2.new(0, 5, 0, 2), UDim2.new(0, 10.5, 0, 11), 0, iconColor)
+	elseif name == "monitor" or name == "desktop" then
+		local mon=Create("Frame",{Size=UDim2.new(0,18,0,12),Position=UDim2.new(0,4,0,4),BackgroundTransparency=1,BorderSizePixel=0,Parent=icon})
+		Corner(mon,3); local st=Create("UIStroke",{Color=iconColor,Thickness=1.7,Parent=mon}); MarkIconPart(st); MarkIconPart(mon)
+		IconBar(icon,UDim2.new(0,2,0,5),UDim2.new(0,12,0,16),0,iconColor)
+		IconBar(icon,UDim2.new(0,10,0,2),UDim2.new(0,8,0,20),0,iconColor)
+	elseif name == "folder" then
+		local f=Create("Frame",{Size=UDim2.new(0,18,0,13),Position=UDim2.new(0,4,0,7),BackgroundColor3=iconColor,BorderSizePixel=0,Parent=icon}); Corner(f,4); MarkIconPart(f)
+		local notch=Create("Frame",{Size=UDim2.new(0,7,0,3),Position=UDim2.new(0,5,0,5),BackgroundColor3=Library.Theme.Background,BorderSizePixel=0,Parent=icon}); Corner(notch,2); MarkIconPart(notch); pcall(function() notch:SetAttribute("ZenIconCutout", true) end)
+	elseif name == "code" then
+		IconBar(icon,UDim2.new(0,9,0,2),UDim2.new(0,3,0,11),-40,iconColor)
+		IconBar(icon,UDim2.new(0,9,0,2),UDim2.new(0,14,0,16),-40,iconColor)
+		IconBar(icon,UDim2.new(0,8,0,2),UDim2.new(0,9,0,5),90,iconColor)
 	else
-		-- Safe, non-font fallback: a compact 2x2 grid.
-		dot(9,9,5); dot(17,9,5); dot(9,17,5); dot(17,17,5)
+		-- Generic clean menu icon for unknown names.
+		for y=7,17,5 do IconBar(icon, UDim2.new(0, 14, 0, 2), UDim2.new(0, 6, 0, y), 0, iconColor) end
 	end
 
 	return icon
+end
+
+local Tween
+
+local function SetIconColor(icon: GuiObject, color: Color3)
+	if not icon then return end
+	for _, inst in ipairs(icon:GetDescendants()) do
+		if inst:GetAttribute("ZenIconPart") then
+			if inst:IsA("UIStroke") then
+				Tween(inst, { Color = color }, 0.14)
+			elseif inst:IsA("Frame") then
+				-- Preserve cutouts that intentionally match the background.
+				if not inst:GetAttribute("ZenIconCutout") then
+					Tween(inst, { BackgroundColor3 = color }, 0.14)
+				end
+			end
+		end
+	end
 end
 
 local function Log(...)
@@ -336,6 +381,12 @@ function Library:SetTheme(name: string)
 			}) end)
 		end
 		for _, inst in ipairs(root:GetDescendants()) do
+			if inst:GetAttribute("ZenIconPart") then
+				pcall(function()
+					if inst:IsA("UIStroke") then inst.Color = palette.TextMuted
+					elseif inst:IsA("Frame") then inst.BackgroundColor3 = palette.TextMuted end
+				end)
+			end
 			for role, value in pairs(palette) do
 				if typeof(value) == "Color3" and inst:GetAttribute("ZenThemeRole_" .. role) then
 					pcall(function()
@@ -357,7 +408,7 @@ function Library:SetTheme(name: string)
 	return true
 end
 
-local function Tween(instance: Instance?, properties: { [string]: any }, duration: number?)
+Tween = function(instance: Instance?, properties: { [string]: any }, duration: number?)
 	if not instance or instance.Parent == nil then return nil end
 	local ok, t = pcall(function()
 		return TweenService:Create(instance, TweenInfo.new(duration or 0.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), properties)
@@ -740,6 +791,28 @@ function Library:CreateWindow(options)
 		Parent = Header,
 	})
 
+	Create("TextLabel", {
+		Size = UDim2.new(0, 270, 0, 22),
+		Position = UDim2.new(0, 18, 0, 10),
+		BackgroundTransparency = 1,
+		Text = options.Name or "ZenUI",
+		TextColor3 = Library.Theme.Text,
+		FontFace = FontBold,
+		TextSize = 17,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = Header,
+	})
+	Create("TextLabel", {
+		Size = UDim2.new(0, 270, 0, 16),
+		Position = UDim2.new(0, 18, 0, 31),
+		BackgroundTransparency = 1,
+		Text = "Adaptive interface",
+		TextColor3 = Library.Theme.TextMuted,
+		FontFace = FontStandard,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = Header,
+	})
 
 	local SearchBox = Create("TextBox", {
 		Name = "CommandSearch",
@@ -913,7 +986,6 @@ function Library:CreateWindow(options)
 		tabOptions = tabOptions or {}
 		local Tab: { [string]: any } = { Elements = {} }
 		local TabName = tabOptions.Name or "Tab"
-
 		local TabButton = Create("TextButton", {
 			Name = TabName .. "Btn",
 			Size = UDim2.new(1, -24, 0, 46),
@@ -926,7 +998,8 @@ function Library:CreateWindow(options)
 			Parent = TabContainer,
 		})
 		Corner(TabButton, 12); Stroke(TabButton, Library.Theme.Border, 0.68, 1)
-		local TabIcon = CreateIcon(TabButton, tabOptions.Icon or "grid")
+		local IconHolder = Create("Frame", { Size=UDim2.new(0,26,0,26), Position=UDim2.new(0,10,0.5,-13), BackgroundTransparency=1, Parent=TabButton })
+		local TabIcon = CreateIcon(IconHolder, tabOptions.Icon or "menu", Library.Theme.TextMuted)
 		local TabText = Create("TextLabel", { Size=UDim2.new(1,-60,1,0), Position=UDim2.new(0,40,0,0), BackgroundTransparency=1, Text=TabName, TextColor3=Library.Theme.TextMuted, FontFace=FontBold, TextSize=12, TextXAlignment=Enum.TextXAlignment.Left, Parent=TabButton })
 		local TabAccent = Create("Frame", { Size = UDim2.new(0, 3, 0, 22), Position = UDim2.new(0, 4, 0.5, -11), BackgroundColor3 = Library.Theme.Accent, BackgroundTransparency = 0, BorderSizePixel = 0, Visible = #Window.Tabs == 0, Parent = TabButton })
 		Corner(TabAccent, 3)
@@ -938,14 +1011,14 @@ function Library:CreateWindow(options)
 		AddConnection(TabButton.MouseEnter:Connect(function()
 			if Window.CurrentTab ~= Tab then
 				Tween(TabButton, { BackgroundColor3 = Library.Theme.ElementHover }, 0.14)
-				for _, part in ipairs(TabIcon:GetDescendants()) do if part:IsA("GuiObject") then Tween(part, { BackgroundColor3 = Library.Theme.Text }, 0.14) end end
+				SetIconColor(TabIcon, Library.Theme.Text)
 				Tween(TabText, { TextColor3 = Library.Theme.Text }, 0.14)
 			end
 		end))
 		AddConnection(TabButton.MouseLeave:Connect(function()
 			if Window.CurrentTab ~= Tab then
 				Tween(TabButton, { BackgroundColor3 = Library.Theme.Element }, 0.14)
-				for _, part in ipairs(TabIcon:GetDescendants()) do if part:IsA("GuiObject") then Tween(part, { BackgroundColor3 = Library.Theme.TextMuted }, 0.14) end end
+				SetIconColor(TabIcon, Library.Theme.TextMuted)
 				Tween(TabText, { TextColor3 = Library.Theme.TextMuted }, 0.14)
 			end
 		end))
@@ -984,7 +1057,7 @@ function Library:CreateWindow(options)
 				tb.Page.Visible = false
 				tb.Accent.Visible = false
 				Tween(tb.Button, { BackgroundColor3 = Library.Theme.Element }, 0.18)
-				for _, part in ipairs(tb.Icon:GetDescendants()) do if part:IsA("GuiObject") then Tween(part, { BackgroundColor3 = Library.Theme.TextMuted }, 0.18) end end
+				SetIconColor(tb.Icon, Library.Theme.TextMuted)
 				Tween(tb.Text, { TextColor3 = Library.Theme.TextMuted }, 0.18)
 			end
 			Window.CurrentTab = Tab
@@ -995,7 +1068,7 @@ function Library:CreateWindow(options)
 			TabAccent.Visible = true
 			SpringTween(PageScale, { Scale = 1 }, 0.30)
 			SpringTween(TabButton, { BackgroundColor3 = Library.Theme.Accent }, 0.24)
-			for _, part in ipairs(TabIcon:GetDescendants()) do if part:IsA("GuiObject") then Tween(part, { BackgroundColor3 = Library.Theme.Background }, 0.18) end end
+			SetIconColor(TabIcon, Library.Theme.Background)
 			Tween(TabText, { TextColor3 = Library.Theme.Background }, 0.18)
 			local q=string.lower(SearchBox.Text or "")
 			for _, child in ipairs(Page:GetChildren()) do
@@ -1009,7 +1082,7 @@ function Library:CreateWindow(options)
 			Page.Visible = true
 			Window.CurrentTab = Tab
 			TabButton.BackgroundColor3 = Library.Theme.Accent
-			for _, part in ipairs(TabIcon:GetDescendants()) do if part:IsA("GuiObject") then part.BackgroundColor3 = Library.Theme.Background end end
+			SetIconColor(TabIcon, Library.Theme.Background)
 			TabText.TextColor3 = Library.Theme.Background
 			TabAccent.Visible = true
 			CurrentPageLabel.Text = TabName
