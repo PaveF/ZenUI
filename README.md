@@ -15,6 +15,11 @@ It is designed to give Roblox projects and scripts a polished control-panel expe
 - configuration saving/loading
 - toggles, sliders, dropdowns, keybinds, text boxes, buttons, labels, paragraphs, sections, separators, and color pickers
 - support for loading the library from a raw GitHub URL
+- an obligatory built-in Settings tab on every window
+- resizable windows with minimum/maximum bounds and a drag handle
+- UI scale presets and a custom 75%–115% scale slider
+- custom accent colors with reset support
+- multi-column content areas (2–4 columns)
 
 The library is intentionally kept as a **single `.luau` file** so it is easy to host, update, and load remotely.
 
@@ -28,6 +33,7 @@ The library is intentionally kept as a **single `.luau` file** so it is easy to 
 - [Library settings](#library-settings)
 - [Creating a window](#creating-a-window)
 - [Tabs](#tabs)
+- [Multi-column layouts](#multi-column-layouts)
 - [Controls](#controls)
   - [Toggle](#toggle)
   - [Slider](#slider)
@@ -41,6 +47,7 @@ The library is intentionally kept as a **single `.luau` file** so it is easy to 
   - [Line](#line)
   - [Color Picker](#color-picker)
 - [Window controls](#window-controls)
+- [Built-in Settings](#built-in-settings)
 - [Themes](#themes)
 - [Notifications](#notifications)
 - [Configuration system](#configuration-system)
@@ -280,6 +287,8 @@ local Window = Lib:CreateWindow({
 | `ConfigurationSaving` | boolean | `false` | Enables config persistence |
 | `ConfigFolder` | string | `"UI_Configs"` | Folder used for config files |
 | `Keybind` | `Enum.KeyCode` | `Insert` | Main UI visibility hotkey |
+| `Width` | number | `960` | Initial window width, clamped to 720–1400 |
+| `Height` | number | `570` | Initial window height, clamped to 460–820 |
 
 The window is draggable from its header.
 
@@ -306,6 +315,41 @@ local Tab = Window:CreateTab({
 The first tab created becomes the active tab automatically.
 
 Tabs use animated selection and hover transitions.
+
+The library automatically creates a **Settings** tab for every window. You do not need to create it yourself.
+
+## Multi-column layouts
+
+Use `CreateColumns()` when a page should distribute controls across multiple vertical columns. Existing control creators can be reused without changing their public API.
+
+```lua
+local Columns = Main:CreateColumns({
+    Count = 2,
+    Gap = 12,
+})
+
+Main:SetColumn(Columns[1])
+Main:CreateToggle({
+    Name = "Left Toggle",
+    CurrentValue = true,
+})
+
+Main:SetColumn(Columns[2])
+Main:CreateSlider({
+    Name = "Right Slider",
+    Min = 0,
+    Max = 100,
+    Default = 50,
+})
+
+Main:ClearColumnSelection()
+```
+
+`Count` can be from 2 to 4. `Gap` controls the horizontal spacing. After selecting a column with `SetColumn()`, controls created afterward are placed there until `ClearColumnSelection()` is called.
+
+## Built-in Settings
+
+Every ZenUI window includes a Settings tab containing: UI scale presets (Compact / Normal / Large), a fine-grained custom scale slider, a live UI accent color picker, accent reset, window width and height controls, and a reset-size action. The Settings tab is intentionally mandatory so every ZenUI window has a consistent place for presentation and layout preferences.
 
 ---
 
@@ -602,6 +646,22 @@ Window:SetVisible(false)
 ```lua
 Window:CycleTheme()
 ```
+
+### UI scale
+
+```lua
+Window:SetScale(0.90)
+print(Window:GetScale())
+```
+
+### Resize by API
+
+```lua
+Window:SetSize(1100, 650)
+local width, height = Window:GetSize()
+```
+
+The window can also be resized directly by dragging the bottom-right corner grip.
 
 ### Permanently destroy the UI
 
@@ -979,6 +1039,12 @@ Container:SetAttribute("ZenSearchText", DisplayName)
 
 The header search system looks for that attribute when filtering the active page.
 
+## Layout extensions
+
+For multi-column pages, prefer `CreateColumns()` and `SetColumn()` over manually parenting controls. This keeps control sizing, search registration, theming, animation, and cleanup consistent with the rest of ZenUI.
+
+The Settings tab is created internally and should not be duplicated by user code. Keep it as the canonical location for UI presentation preferences.
+
 ## Public API stability
 
 Current library-level methods:
@@ -995,6 +1061,8 @@ Library:DeleteConfig
 Library:ListConfigs
 Library:Notify
 Library:CreateNotify
+Library:SetAccentColor
+Library:ResetAccentColor
 ```
 
 Current window methods:
@@ -1007,6 +1075,10 @@ Window:ToggleMinimize
 Window:Close
 Window:SetVisible
 Window:CycleTheme
+Window:SetScale
+Window:GetScale
+Window:SetSize
+Window:GetSize
 Window:Destroy
 ```
 
