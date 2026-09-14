@@ -1,7 +1,7 @@
 --!nonstrict
 -- Usage:
 --   local Library = (loadstring or require)(...)
---   local lib = Library.new({ Name = "My Hub", Theme = "Midnight" })
+--   local lib = Library.new({ Name = "My Hub", Theme = "Dark" })
 --   lib:SetTheme("Aurora") -- live-switch any built-in theme
 --   print(table.concat(lib:GetThemes(), ", "))
 --   local Window = lib:CreateWindow({ Name = "My Hub", ConfigurationSaving = true })
@@ -15,6 +15,7 @@ local UserInputService = game:GetService("UserInputService")
 local CoreGui = game:GetService("CoreGui")
 local RunService = game:GetService("RunService")
 local TextService = game:GetService("TextService")
+local Players = game:GetService("Players")
 
 local getgenv = getgenv or function() return _G end
 
@@ -52,113 +53,50 @@ local delfile = (type(getgenv().delfile) == "function") and getgenv().delfile
 	or (type(rawget(_G, "delfile")) == "function" and rawget(_G, "delfile")) or nil
 
 local Themes = {
-	Emerald = {
-		Background = Color3.fromRGB(13, 16, 20),
-		Sidebar = Color3.fromRGB(16, 20, 25),
-		Element = Color3.fromRGB(22, 27, 33),
-		ElementHover = Color3.fromRGB(31, 38, 46),
-		Accent = Color3.fromRGB(104, 232, 164),
-		Text = Color3.fromRGB(245, 248, 250),
-		TextMuted = Color3.fromRGB(146, 157, 169),
-		Border = Color3.fromRGB(46, 58, 69),
-		Glow = Color3.fromRGB(69, 199, 137),
-		Surface = Color3.fromRGB(19, 24, 30),
-		SurfaceStrong = Color3.fromRGB(27, 33, 41),
-	},
-	Midnight = {
-		Background = Color3.fromRGB(10, 11, 18),
-		Sidebar = Color3.fromRGB(14, 15, 25),
-		Element = Color3.fromRGB(20, 22, 34),
-		ElementHover = Color3.fromRGB(31, 34, 51),
-		Accent = Color3.fromRGB(121, 120, 255),
-		Text = Color3.fromRGB(242, 242, 255),
-		TextMuted = Color3.fromRGB(149, 151, 175),
-		Border = Color3.fromRGB(48, 50, 73),
-		Glow = Color3.fromRGB(98, 96, 224),
-		Surface = Color3.fromRGB(16, 18, 29),
-		SurfaceStrong = Color3.fromRGB(24, 27, 41),
-	},
-	Rose = {
-		Background = Color3.fromRGB(19, 14, 18),
-		Sidebar = Color3.fromRGB(25, 17, 23),
-		Element = Color3.fromRGB(35, 23, 31),
-		ElementHover = Color3.fromRGB(50, 31, 42),
-		Accent = Color3.fromRGB(255, 110, 163),
-		Text = Color3.fromRGB(255, 243, 248),
-		TextMuted = Color3.fromRGB(177, 146, 161),
-		Border = Color3.fromRGB(73, 45, 60),
-		Glow = Color3.fromRGB(219, 79, 131),
-		Surface = Color3.fromRGB(29, 20, 27),
-		SurfaceStrong = Color3.fromRGB(42, 28, 37),
-	},
-	Ocean = {
-		Background = Color3.fromRGB(9, 18, 25),
-		Sidebar = Color3.fromRGB(11, 24, 33),
-		Element = Color3.fromRGB(16, 34, 45),
-		ElementHover = Color3.fromRGB(23, 47, 60),
-		Accent = Color3.fromRGB(74, 208, 255),
-		Text = Color3.fromRGB(238, 250, 255),
-		TextMuted = Color3.fromRGB(139, 168, 181),
-		Border = Color3.fromRGB(37, 67, 81),
-		Glow = Color3.fromRGB(41, 162, 207),
-		Surface = Color3.fromRGB(13, 29, 38),
-		SurfaceStrong = Color3.fromRGB(20, 42, 55),
-	},
-	Amber = {
-		Background = Color3.fromRGB(20, 17, 11),
-		Sidebar = Color3.fromRGB(28, 22, 12),
-		Element = Color3.fromRGB(38, 29, 15),
-		ElementHover = Color3.fromRGB(53, 41, 20),
-		Accent = Color3.fromRGB(255, 190, 76),
-		Text = Color3.fromRGB(255, 249, 237),
-		TextMuted = Color3.fromRGB(181, 160, 116),
-		Border = Color3.fromRGB(78, 60, 29),
-		Glow = Color3.fromRGB(207, 144, 35),
-		Surface = Color3.fromRGB(33, 25, 13),
-		SurfaceStrong = Color3.fromRGB(48, 37, 18),
-	},
-	Aurora = {
-		Background = Color3.fromRGB(10, 17, 18),
-		Sidebar = Color3.fromRGB(12, 24, 24),
-		Element = Color3.fromRGB(17, 33, 33),
-		ElementHover = Color3.fromRGB(23, 48, 45),
-		Accent = Color3.fromRGB(82, 239, 202),
-		Text = Color3.fromRGB(239, 255, 252),
-		TextMuted = Color3.fromRGB(135, 177, 169),
-		Border = Color3.fromRGB(34, 69, 63),
-		Glow = Color3.fromRGB(42, 190, 157),
-		Surface = Color3.fromRGB(14, 28, 29),
-		SurfaceStrong = Color3.fromRGB(21, 43, 41),
-	},
-	Violet = {
-		Background = Color3.fromRGB(15, 12, 22),
-		Sidebar = Color3.fromRGB(21, 16, 30),
-		Element = Color3.fromRGB(29, 22, 40),
-		ElementHover = Color3.fromRGB(43, 32, 58),
-		Accent = Color3.fromRGB(190, 122, 255),
-		Text = Color3.fromRGB(248, 242, 255),
-		TextMuted = Color3.fromRGB(167, 146, 190),
-		Border = Color3.fromRGB(62, 46, 82),
-		Glow = Color3.fromRGB(143, 86, 202),
-		Surface = Color3.fromRGB(25, 19, 35),
-		SurfaceStrong = Color3.fromRGB(37, 28, 51),
-	},
-	Mono = {
-		Background = Color3.fromRGB(14, 14, 16),
-		Sidebar = Color3.fromRGB(19, 19, 22),
-		Element = Color3.fromRGB(27, 27, 31),
-		ElementHover = Color3.fromRGB(40, 40, 45),
-		Accent = Color3.fromRGB(224, 224, 229),
+	Dark = {
+		Background = Color3.fromRGB(8, 9, 11),
+		Sidebar = Color3.fromRGB(12, 13, 16),
+		Element = Color3.fromRGB(18, 19, 23),
+		ElementHover = Color3.fromRGB(28, 29, 34),
+		Accent = Color3.fromRGB(245, 245, 247),
 		Text = Color3.fromRGB(248, 248, 250),
-		TextMuted = Color3.fromRGB(157, 157, 165),
-		Border = Color3.fromRGB(52, 52, 58),
-		Glow = Color3.fromRGB(170, 170, 180),
-		Surface = Color3.fromRGB(22, 22, 25),
-		SurfaceStrong = Color3.fromRGB(34, 34, 38),
+		TextMuted = Color3.fromRGB(150, 152, 158),
+		Border = Color3.fromRGB(58, 60, 68),
+		Glow = Color3.fromRGB(220, 222, 228),
+		Surface = Color3.fromRGB(15, 16, 20),
+		SurfaceStrong = Color3.fromRGB(24, 25, 30),
+	},
+	Light = {
+		Background = Color3.fromRGB(244, 245, 247),
+		Sidebar = Color3.fromRGB(234, 235, 238),
+		Element = Color3.fromRGB(255, 255, 255),
+		ElementHover = Color3.fromRGB(235, 236, 240),
+		Accent = Color3.fromRGB(20, 21, 24),
+		Text = Color3.fromRGB(20, 21, 24),
+		TextMuted = Color3.fromRGB(105, 107, 114),
+		Border = Color3.fromRGB(205, 207, 213),
+		Glow = Color3.fromRGB(55, 57, 64),
+		Surface = Color3.fromRGB(250, 250, 252),
+		SurfaceStrong = Color3.fromRGB(238, 239, 243),
 	},
 }
 
-Themes.Blue = Themes.Midnight
+-- Backward-compatible theme names. They intentionally resolve to the
+-- monochrome palettes so ZenUI stays white/dark even with old configs.
+Themes.Emerald = Themes.Dark
+Themes.Midnight = Themes.Dark
+Themes.Blue = Themes.Dark
+Themes.Rose = Themes.Dark
+Themes.Ocean = Themes.Dark
+Themes.Amber = Themes.Dark
+Themes.Aurora = Themes.Dark
+Themes.Violet = Themes.Dark
+Themes.Mono = Themes.Dark
+
+local CanonicalThemes = {
+	Dark = true,
+	Light = true,
+}
 
 local Library: { [string]: any } = {
 	Debug = false,
@@ -506,7 +444,7 @@ end
 
 function Library:GetThemes()
 	local out = {}
-	for name in pairs(Themes) do
+	for name in pairs(CanonicalThemes) do
 		table.insert(out, name)
 	end
 	table.sort(out)
@@ -735,7 +673,8 @@ function Library:CreateWindow(options)
 		Rotation = 135,
 		Color = ColorSequence.new({
 			ColorSequenceKeypoint.new(0, Library.Theme.SurfaceStrong or Library.Theme.Element),
-			ColorSequenceKeypoint.new(0.45, Library.Theme.Background),
+			ColorSequenceKeypoint.new(0.28, Library.Theme.Surface or Library.Theme.Element),
+			ColorSequenceKeypoint.new(0.62, Library.Theme.Background),
 			ColorSequenceKeypoint.new(1, Library.Theme.Sidebar),
 		}),
 		Parent = MainFrame,
@@ -806,7 +745,7 @@ function Library:CreateWindow(options)
 		Size = UDim2.new(0, 270, 0, 16),
 		Position = UDim2.new(0, 18, 0, 31),
 		BackgroundTransparency = 1,
-		Text = "Adaptive interface",
+		Text = "Roblox control panel",
 		TextColor3 = Library.Theme.TextMuted,
 		FontFace = FontStandard,
 		TextSize = 11,
@@ -882,6 +821,29 @@ function Library:CreateWindow(options)
 	end
 	AddConnection(ThemeButton.MouseButton1Click:Connect(CycleTheme))
 
+	local HeaderSheen = Create("Frame", {
+		Name = "HeaderSheen",
+		Size = UDim2.new(0.42, 0, 1, 0),
+		Position = UDim2.new(0.58, 0, 0, 0),
+		BackgroundColor3 = Library.Theme.Text,
+		BackgroundTransparency = 0.965,
+		BorderSizePixel = 0,
+		Parent = Header,
+	})
+	Create("UIGradient", {
+		Rotation = 0,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Library.Theme.Text),
+			ColorSequenceKeypoint.new(0.5, Library.Theme.TextMuted),
+			ColorSequenceKeypoint.new(1, Library.Theme.Text),
+		}),
+		Transparency = NumberSequence.new({
+			NumberSequenceKeypoint.new(0, 1),
+			NumberSequenceKeypoint.new(0.45, 0.94),
+			NumberSequenceKeypoint.new(1, 1),
+		}),
+		Parent = HeaderSheen,
+	})
 	local HeaderGlow = Create("Frame", { Size = UDim2.new(1,-32,0,2), Position = UDim2.new(0,16,1,-2), BackgroundColor3 = Library.Theme.Accent, BackgroundTransparency = 0.12, BorderSizePixel = 0, Parent = Header })
 	task.spawn(function() while HeaderGlow.Parent do Tween(HeaderGlow,{BackgroundTransparency=0.38},1.0); task.wait(1.0); Tween(HeaderGlow,{BackgroundTransparency=0.05},1.0); task.wait(1.0) end end)
 
@@ -895,8 +857,8 @@ function Library:CreateWindow(options)
 	local Brand = Create("Frame", { Size = UDim2.new(1,-24,0,56), Position = UDim2.new(0,12,0,12), BackgroundColor3 = Library.Theme.SurfaceStrong or Library.Theme.Element, Parent = Sidebar })
 	Corner(Brand, 12); Stroke(Brand, Library.Theme.Border, 0.46, 1)
 	local BrandMarker = AddAccentRail(Brand)
-	Create("TextLabel", { Size=UDim2.new(1,-24,0,16), Position=UDim2.new(0,14,0,9), BackgroundTransparency=1, Text="NAVIGATION", TextColor3=Library.Theme.TextMuted, FontFace=FontBold, TextSize=9, TextXAlignment=Enum.TextXAlignment.Left, Parent=Brand })
-	Create("TextLabel", { Name="BrandHint", Size=UDim2.new(1,-24,0,22), Position=UDim2.new(0,14,0,24), BackgroundTransparency=1, Text="Control panel", TextColor3=Library.Theme.Text, FontFace=FontBold, TextSize=13, TextXAlignment=Enum.TextXAlignment.Left, Parent=Brand })
+	Create("TextLabel", { Size=UDim2.new(1,-24,0,16), Position=UDim2.new(0,14,0,9), BackgroundTransparency=1, Text="MENU", TextColor3=Library.Theme.TextMuted, FontFace=FontBold, TextSize=9, TextXAlignment=Enum.TextXAlignment.Left, Parent=Brand })
+	Create("TextLabel", { Name="BrandHint", Size=UDim2.new(1,-24,0,22), Position=UDim2.new(0,14,0,24), BackgroundTransparency=1, Text="Navigation", TextColor3=Library.Theme.Text, FontFace=FontBold, TextSize=13, TextXAlignment=Enum.TextXAlignment.Left, Parent=Brand })
 
 	local CollapseButton = Create("TextButton", { Size=UDim2.new(0,28,0,28), Position=UDim2.new(1,-40,0,26), BackgroundColor3=Library.Theme.Element, Text="‹", TextColor3=Library.Theme.TextMuted, FontFace=FontBold, TextSize=17, AutoButtonColor=false, Parent=Sidebar })
 	Corner(CollapseButton, 9); Stroke(CollapseButton, Library.Theme.Border, 0.5, 1)
@@ -906,14 +868,102 @@ function Library:CreateWindow(options)
 	local TabListLayout = Create("UIListLayout", { SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,7), HorizontalAlignment=Enum.HorizontalAlignment.Center, Parent=TabContainer })
 	AddConnection(TabListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() TabContainer.CanvasSize=UDim2.new(0,0,0,TabListLayout.AbsoluteContentSize.Y+10) end))
 
-	local SidebarFooter = Create("Frame", { Size=UDim2.new(1,-24,0,46), Position=UDim2.new(0,12,1,-58), BackgroundColor3=Library.Theme.Element, BackgroundTransparency=0.22, BorderSizePixel=0, Parent=Sidebar })
-	Corner(SidebarFooter,11); Stroke(SidebarFooter,Library.Theme.Border,0.55,1)
-	local FooterDot = GlowDot(SidebarFooter,8,UDim2.new(0,14,0.5,0),Library.Theme.Accent,0.08)
-	local FooterText = Create("TextLabel", { Size=UDim2.new(1,-34,0,18), Position=UDim2.new(0,28,0,6), BackgroundTransparency=1, Text="UI ENGINE", TextColor3=Library.Theme.TextMuted, FontFace=FontBold, TextSize=9, TextXAlignment=Enum.TextXAlignment.Left, Parent=SidebarFooter })
-	Create("TextLabel", { Size=UDim2.new(1,-34,0,16), Position=UDim2.new(0,28,0,23), BackgroundTransparency=1, Text="ZenUI Core", TextColor3=Library.Theme.Text, FontFace=FontBold, TextSize=11, TextXAlignment=Enum.TextXAlignment.Left, Parent=SidebarFooter })
-	task.spawn(function() while FooterDot.Parent do Tween(FooterDot,{BackgroundTransparency=0.38},0.9); task.wait(0.9); Tween(FooterDot,{BackgroundTransparency=0.06},0.9); task.wait(0.9) end end)
+	local SidebarFooter = Create("Frame", {
+		Name = "PlayerProfile",
+		Size = UDim2.new(1,-24,0,66),
+		Position = UDim2.new(0,12,1,-78),
+		BackgroundColor3 = Library.Theme.SurfaceStrong or Library.Theme.Element,
+		BackgroundTransparency = 0.08,
+		BorderSizePixel = 0,
+		Parent = Sidebar,
+	})
+	Corner(SidebarFooter,12); Stroke(SidebarFooter,Library.Theme.Border,0.38,1)
+	local ProfileAccent = Create("Frame", {
+		Size = UDim2.new(0,3,0,34),
+		Position = UDim2.new(0,4,0.5,-17),
+		BackgroundColor3 = Library.Theme.Accent,
+		BorderSizePixel = 0,
+		Parent = SidebarFooter,
+	})
+	Corner(ProfileAccent,2)
+
+	local ProfileAvatar = Create("ImageLabel", {
+		Name = "Avatar",
+		Size = UDim2.new(0,44,0,44),
+		Position = UDim2.new(0,10,0.5,-22),
+		BackgroundColor3 = Library.Theme.Element,
+		BackgroundTransparency = 0,
+		Image = "",
+		ScaleType = Enum.ScaleType.Crop,
+		Parent = SidebarFooter,
+	})
+	Corner(ProfileAvatar,12); Stroke(ProfileAvatar,Library.Theme.Border,0.35,1)
+
+	local PlayerName = Create("TextLabel", {
+		Name = "DisplayName",
+		Size = UDim2.new(1,-68,0,20),
+		Position = UDim2.new(0,62,0,11),
+		BackgroundTransparency = 1,
+		Text = "Player",
+		TextColor3 = Library.Theme.Text,
+		FontFace = FontBold,
+		TextSize = 13,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = SidebarFooter,
+	})
+
+	local Username = Create("TextLabel", {
+		Name = "Username",
+		Size = UDim2.new(1,-68,0,17),
+		Position = UDim2.new(0,62,0,32),
+		BackgroundTransparency = 1,
+		Text = "@player",
+		TextColor3 = Library.Theme.TextMuted,
+		FontFace = FontStandard,
+		TextSize = 10,
+		TextTruncate = Enum.TextTruncate.AtEnd,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = SidebarFooter,
+	})
+
+	local Player = Players.LocalPlayer
+	if Player then
+		PlayerName.Text = Player.DisplayName ~= "" and Player.DisplayName or Player.Name
+		Username.Text = "@" .. Player.Name
+		local okThumb, content = pcall(function()
+			local image = Players:GetUserThumbnailAsync(
+				Player.UserId,
+				Enum.ThumbnailType.HeadShot,
+				Enum.ThumbnailSize.Size100x100
+			)
+			return image
+		end)
+		if okThumb and type(content) == "string" then
+			ProfileAvatar.Image = content
+		else
+			ProfileAvatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(Player.UserId) .. "&w=100&h=100"
+		end
+	end
+
 
 	local ContentContainer = Create("Frame", { Name="ContentContainer", Size=UDim2.new(1,-SidebarWidth,1,-62), Position=UDim2.new(0,SidebarWidth,0,62), BackgroundTransparency=1, Parent=MainFrame })
+
+	AddConnection(CollapseButton.MouseButton1Click:Connect(function()
+		Collapsed = not Collapsed
+		local targetWidth = Collapsed and 76 or SidebarWidth
+		SpringTween(Sidebar, {Size = UDim2.new(0,targetWidth,1,-62)}, 0.26)
+		SpringTween(ContentContainer, {Size = UDim2.new(1,-targetWidth,1,-62), Position = UDim2.new(0,targetWidth,0,62)}, 0.26)
+		Tween(CollapseButton, {Rotation = Collapsed and 180 or 0}, 0.2)
+		Brand.Visible = not Collapsed
+		SidebarFooter.Visible = not Collapsed
+		for _, entry in ipairs(Window.Tabs) do
+			entry.Text.Visible = not Collapsed
+			if entry.Badge then entry.Badge.Visible = not Collapsed end
+			entry.Button.Size = UDim2.new(1, Collapsed and -18 or -24, 0, 46)
+			entry.Icon.Position = UDim2.new(0, Collapsed and 25 or 10, 0.5, -13)
+		end
+	end))
 	local ContentTop = Create("Frame", { Size=UDim2.new(1,-28,0,48), Position=UDim2.new(0,14,0,10), BackgroundColor3=Library.Theme.Surface or Library.Theme.Element, BackgroundTransparency=0.10, BorderSizePixel=0, Parent=ContentContainer })
 	Corner(ContentTop,12); Stroke(ContentTop,Library.Theme.Border,0.45,1)
 	local TopSheen = Create("Frame", { Size=UDim2.new(0,2,1,-12), Position=UDim2.new(0,6,0,6), BackgroundColor3=Library.Theme.Accent, BackgroundTransparency=0.18, BorderSizePixel=0, Parent=ContentTop })
@@ -927,7 +977,7 @@ function Library:CreateWindow(options)
 
 	local WindowState = { Minimized=false, Closed=false }
 	local RestoreHeight = 570
-	local ReopenButton = Create("TextButton", { Name="ReopenButton", Size=UDim2.new(0,58,0,58), AnchorPoint=Vector2.new(1,1), Position=UDim2.new(1,-24,1,-24), BackgroundColor3=Library.Theme.Element, Text="Z", TextColor3=Library.Theme.Accent, FontFace=FontBold, TextSize=21, AutoButtonColor=false, Visible=false, ZIndex=200, Parent=Library.ScreenGui })
+	local ReopenButton = Create("TextButton", { Name="ReopenButton", Size=UDim2.new(0,58,0,58), AnchorPoint=Vector2.new(1,1), Position=UDim2.new(1,-24,1,-24), BackgroundColor3=Library.Theme.Element, Text="Z", TextColor3=Library.Theme.Text, FontFace=FontBold, TextSize=21, AutoButtonColor=false, Visible=false, ZIndex=200, Parent=Library.ScreenGui })
 	AddInstance(ReopenButton); Corner(ReopenButton,18); Stroke(ReopenButton,Library.Theme.Border,0.12,1.3)
 	local ReopenScale=Create("UIScale",{Scale=0.7,Parent=ReopenButton})
 	local function ShowLauncher() ReopenButton.Visible=true; SpringTween(ReopenScale,{Scale=1},0.35) end
@@ -1089,7 +1139,7 @@ function Library:CreateWindow(options)
 			PageKicker.Text = string.upper(TabName)
 		end
 
-		table.insert(Window.Tabs, { Button = TabButton, Page = Page, Accent = TabAccent, Icon = TabIcon, Text = TabText, Name = TabName, PageScale = PageScale })
+		table.insert(Window.Tabs, { Button = TabButton, Page = Page, Accent = TabAccent, Icon = TabIcon, Text = TabText, Badge = Badge, Name = TabName, PageScale = PageScale })
 
 		-- ============================= Toggle =============================
 
