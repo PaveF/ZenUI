@@ -1,3 +1,15 @@
+
+
+
+
+
+
+
+
+
+
+
+
 local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -1193,9 +1205,12 @@ function Library:CreateWindow(options)
 			Stroke(Indicator, Library.Theme.Border, 0.5, 1)
 
 			local Btn = Create("TextButton", {
-				Size = UDim2.new(1, 0, 1, 0),
+				Size = UDim2.new(0, 44, 0, 24),
+				Position = UDim2.new(1, -54, 0.5, -12),
 				BackgroundTransparency = 1,
 				Text = "",
+				AutoButtonColor = false,
+				ZIndex = SwitchArea.ZIndex + 2,
 				Parent = Container,
 			})
 
