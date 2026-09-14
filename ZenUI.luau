@@ -1,5 +1,4 @@
 --!nonstrict
--- ZenUI - Rayfield-style UI library for the Real executor
 -- Usage:
 --   local Library = (loadstring or require)(...)
 --   local lib = Library.new({ Name = "My Hub", Theme = "Midnight" })
