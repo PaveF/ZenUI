@@ -63,6 +63,8 @@ local Themes = {
 		TextMuted = Color3.fromRGB(146, 157, 169),
 		Border = Color3.fromRGB(46, 58, 69),
 		Glow = Color3.fromRGB(69, 199, 137),
+		Surface = Color3.fromRGB(19, 24, 30),
+		SurfaceStrong = Color3.fromRGB(27, 33, 41),
 	},
 	Midnight = {
 		Background = Color3.fromRGB(10, 11, 18),
@@ -74,6 +76,8 @@ local Themes = {
 		TextMuted = Color3.fromRGB(149, 151, 175),
 		Border = Color3.fromRGB(48, 50, 73),
 		Glow = Color3.fromRGB(98, 96, 224),
+		Surface = Color3.fromRGB(16, 18, 29),
+		SurfaceStrong = Color3.fromRGB(24, 27, 41),
 	},
 	Rose = {
 		Background = Color3.fromRGB(19, 14, 18),
@@ -85,6 +89,8 @@ local Themes = {
 		TextMuted = Color3.fromRGB(177, 146, 161),
 		Border = Color3.fromRGB(73, 45, 60),
 		Glow = Color3.fromRGB(219, 79, 131),
+		Surface = Color3.fromRGB(29, 20, 27),
+		SurfaceStrong = Color3.fromRGB(42, 28, 37),
 	},
 	Ocean = {
 		Background = Color3.fromRGB(9, 18, 25),
@@ -96,6 +102,8 @@ local Themes = {
 		TextMuted = Color3.fromRGB(139, 168, 181),
 		Border = Color3.fromRGB(37, 67, 81),
 		Glow = Color3.fromRGB(41, 162, 207),
+		Surface = Color3.fromRGB(13, 29, 38),
+		SurfaceStrong = Color3.fromRGB(20, 42, 55),
 	},
 	Amber = {
 		Background = Color3.fromRGB(20, 17, 11),
@@ -107,6 +115,8 @@ local Themes = {
 		TextMuted = Color3.fromRGB(181, 160, 116),
 		Border = Color3.fromRGB(78, 60, 29),
 		Glow = Color3.fromRGB(207, 144, 35),
+		Surface = Color3.fromRGB(33, 25, 13),
+		SurfaceStrong = Color3.fromRGB(48, 37, 18),
 	},
 	Aurora = {
 		Background = Color3.fromRGB(10, 17, 18),
@@ -118,6 +128,8 @@ local Themes = {
 		TextMuted = Color3.fromRGB(135, 177, 169),
 		Border = Color3.fromRGB(34, 69, 63),
 		Glow = Color3.fromRGB(42, 190, 157),
+		Surface = Color3.fromRGB(14, 28, 29),
+		SurfaceStrong = Color3.fromRGB(21, 43, 41),
 	},
 	Violet = {
 		Background = Color3.fromRGB(15, 12, 22),
@@ -129,6 +141,8 @@ local Themes = {
 		TextMuted = Color3.fromRGB(167, 146, 190),
 		Border = Color3.fromRGB(62, 46, 82),
 		Glow = Color3.fromRGB(143, 86, 202),
+		Surface = Color3.fromRGB(25, 19, 35),
+		SurfaceStrong = Color3.fromRGB(37, 28, 51),
 	},
 	Mono = {
 		Background = Color3.fromRGB(14, 14, 16),
@@ -140,6 +154,8 @@ local Themes = {
 		TextMuted = Color3.fromRGB(157, 157, 165),
 		Border = Color3.fromRGB(52, 52, 58),
 		Glow = Color3.fromRGB(170, 170, 180),
+		Surface = Color3.fromRGB(22, 22, 25),
+		SurfaceStrong = Color3.fromRGB(34, 34, 38),
 	},
 }
 
@@ -164,6 +180,8 @@ local Library: { [string]: any } = {
 
 local FontStandard = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Medium)
 local FontBold = Font.new("rbxasset://fonts/families/GothamSSm.json", Enum.FontWeight.Bold)
+
+local Create
 
 local function Stroke(parent, color, transparency, thickness)
 	return Create("UIStroke", { Color = color or Library.Theme.Border, Transparency = transparency or 0.25, Thickness = thickness or 1, Parent = parent })
@@ -195,7 +213,7 @@ local function AddInstance(inst: Instance)
 	return inst
 end
 
-local function Create(className: string, properties: { [string]: any }): Instance
+Create = function(className: string, properties: { [string]: any }): Instance
 	local inst = Instance.new(className)
 	for k, v in pairs(properties) do
 		if k ~= "Parent" then
@@ -287,6 +305,38 @@ local function SpringTween(instance: Instance?, properties: { [string]: any }, d
 	if not ok or not t then return nil end
 	t:Play()
 	return t
+end
+
+local function CardMotion(card: GuiObject, hoverColor: Color3?)
+	if not card then return end
+	card.Active = true
+	local scale = card:FindFirstChildOfClass("UIScale") or Create("UIScale", { Scale = 1, Parent = card })
+	local base = card.BackgroundColor3
+	AddConnection(card.MouseEnter:Connect(function()
+		SpringTween(scale, { Scale = 1.012 }, 0.18)
+		if card.BackgroundTransparency < 1 then
+			Tween(card, { BackgroundColor3 = hoverColor or Library.Theme.ElementHover }, 0.16)
+		end
+	end))
+	AddConnection(card.MouseLeave:Connect(function()
+		SpringTween(scale, { Scale = 1 }, 0.16)
+		if card.BackgroundTransparency < 1 then
+			Tween(card, { BackgroundColor3 = base }, 0.18)
+		end
+	end))
+end
+
+local function AddAccentRail(parent: GuiObject)
+	local rail = Create("Frame", {
+		Size = UDim2.new(0, 2, 0, 20),
+		Position = UDim2.new(0, 0, 0.5, -10),
+		BackgroundColor3 = Library.Theme.Accent,
+		BackgroundTransparency = 0.1,
+		BorderSizePixel = 0,
+		Parent = parent,
+	})
+	Corner(rail, 2)
+	return rail
 end
 
 local function FadeRecursive(root: Instance, transparency: number, duration: number?)
@@ -547,7 +597,7 @@ function Library:CreateWindow(options)
 
 	local MainFrame = Create("Frame", {
 		Name = "MainWindow",
-		Size = UDim2.new(0, 820, 0, 520),
+		Size = UDim2.new(0, 900, 0, 570),
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0),
 		BackgroundColor3 = Library.Theme.Background,
@@ -557,351 +607,269 @@ function Library:CreateWindow(options)
 	})
 	AddInstance(MainFrame)
 	Library.MainFrame = MainFrame
-	Create("UICorner", { CornerRadius = UDim.new(0, 14), Parent = MainFrame })
-	Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1.2, Transparency = 0.15, Parent = MainFrame })
+	Corner(MainFrame, 18)
+	Stroke(MainFrame, Library.Theme.Border, 0.08, 1.4)
+
 	local WindowGradient = Create("UIGradient", {
 		Rotation = 135,
 		Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Library.Theme.Element),
-			ColorSequenceKeypoint.new(0.55, Library.Theme.Background),
+			ColorSequenceKeypoint.new(0, Library.Theme.SurfaceStrong or Library.Theme.Element),
+			ColorSequenceKeypoint.new(0.45, Library.Theme.Background),
 			ColorSequenceKeypoint.new(1, Library.Theme.Sidebar),
-		}),
-		Transparency = NumberSequence.new({
-			NumberSequenceKeypoint.new(0, 0.9),
-			NumberSequenceKeypoint.new(0.48, 0.96),
-			NumberSequenceKeypoint.new(1, 0.98),
 		}),
 		Parent = MainFrame,
 	})
 	pcall(function() WindowGradient:SetAttribute("ZenGradient", true) end)
 
-	local UIScale = Create("UIScale", { Scale = 0.92, Parent = MainFrame })
-
-	task.spawn(function()
-		pcall(function()
-			if MainFrame.Parent then
-				Tween(MainFrame, { BackgroundTransparency = 0 }, 0.28)
-				SpringTween(UIScale, { Scale = 1 }, 0.48)
-			end
-		end)
-	end)
-
-	local Header = Create("Frame", {
-		Name = "Header",
-		Size = UDim2.new(1, 0, 0, 52),
-		BackgroundTransparency = 1,
-		Active = true,
-		Parent = MainFrame,
-	})
-
-	local HeaderGlow = Create("Frame", {
-		Name = "HeaderGlow",
-		Size = UDim2.new(1, -36, 0, 2),
-		Position = UDim2.new(0, 18, 1, -2),
-		BackgroundColor3 = Library.Theme.Accent,
-		BackgroundTransparency = 0.15,
-		BorderSizePixel = 0,
-		Parent = Header,
-	})
-
-	task.spawn(function()
-		while HeaderGlow.Parent and MainFrame.Parent do
-			Tween(HeaderGlow, { BackgroundTransparency = 0.35 }, 1.2)
-			task.wait(1.2)
-			Tween(HeaderGlow, { BackgroundTransparency = 0.08 }, 1.2)
-			task.wait(1.2)
-		end
-	end)
-
-
-	-- Window drag (buttons excluded so dragging never steals clicks)
-	local MinimizeButton, CloseButton
-	local dragging, dragInput, dragStart, startPos
-	AddConnection(Header.InputBegan:Connect(function(input)
-		local target = input.Target
-		if target and (target:IsDescendantOf(MinimizeButton) or target:IsDescendantOf(CloseButton)) then return end
-		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			dragging = true
-			dragStart = input.Position
-			startPos = MainFrame.Position
-
-			local inputEndConn
-			inputEndConn = input.Changed:Connect(function()
-				if input.UserInputState == Enum.UserInputState.End then
-					dragging = false
-					if inputEndConn then inputEndConn:Disconnect() end
-				end
-			end)
-		end
-	end))
-
-	AddConnection(Header.InputChanged:Connect(function(input)
-		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then
-			dragInput = input
-		end
-	end))
-
-	AddConnection(UserInputService.InputChanged:Connect(function(input)
-		if input == dragInput and dragging and startPos then
-			local delta = input.Position - dragStart
-			MainFrame.Position = UDim2.new(
-				startPos.X.Scale, startPos.X.Offset + delta.X,
-				startPos.Y.Scale, startPos.Y.Offset + delta.Y
-			)
-		end
-	end))
-
-	-- Decorative depth layers
-	local BackGlow = Create("Frame", {
-		Name = "BackGlow",
-		Size = UDim2.new(1, 140, 1, 140),
-		Position = UDim2.new(0.5, -70, 0.5, -70),
+	local MainScale = Create("UIScale", { Scale = 0.90, Parent = MainFrame })
+	local MainShadow = Create("Frame", {
+		Name = "Shadow",
+		Size = UDim2.new(1, 42, 1, 42),
+		Position = UDim2.new(0.5, -21, 0.5, -21),
 		BackgroundColor3 = Library.Theme.Glow,
-		BackgroundTransparency = 0.94,
+		BackgroundTransparency = 0.965,
 		BorderSizePixel = 0,
 		ZIndex = 0,
 		Parent = MainFrame,
 	})
-	Corner(BackGlow, 40)
-	local AccentOrbA = GlowDot(MainFrame, 170, UDim2.new(1, -55, 0, 70), Library.Theme.Accent, 0.94)
-	local AccentOrbB = GlowDot(MainFrame, 120, UDim2.new(0, 25, 1, -35), Library.Theme.Glow, 0.95)
-	AccentOrbA.ZIndex = 0
-	AccentOrbB.ZIndex = 0
+	Corner(MainShadow, 30)
+
+	local AmbientA = GlowDot(MainFrame, 220, UDim2.new(1, 0, 0, 86), Library.Theme.Accent, 0.965)
+	local AmbientB = GlowDot(MainFrame, 180, UDim2.new(0, 5, 1, -30), Library.Theme.Glow, 0.968)
+	local AmbientC = GlowDot(MainFrame, 110, UDim2.new(0.48, 0, 0.2, 0), Library.Theme.Accent, 0.978)
+	AmbientA.ZIndex, AmbientB.ZIndex, AmbientC.ZIndex = 0, 0, 0
+
 	task.spawn(function()
 		while MainFrame.Parent do
-			SpringTween(AccentOrbA, { Position = UDim2.new(1, -70, 0, 78) }, 2.8)
-			task.wait(2.8)
-			SpringTween(AccentOrbA, { Position = UDim2.new(1, -48, 0, 62) }, 2.8)
-			task.wait(2.8)
+			Tween(AmbientA, { Position = UDim2.new(1, -35, 0, 64) }, 3.4)
+			Tween(AmbientB, { Position = UDim2.new(0, 34, 1, -58) }, 3.1)
+			Tween(AmbientC, { Position = UDim2.new(0.52, 0, 0.28, 0) }, 2.8)
+			task.wait(3.4)
+			Tween(AmbientA, { Position = UDim2.new(1, 18, 0, 105) }, 3.4)
+			Tween(AmbientB, { Position = UDim2.new(0, 0, 1, -18) }, 3.1)
+			Tween(AmbientC, { Position = UDim2.new(0.42, 0, 0.13, 0) }, 2.8)
+			task.wait(3.4)
 		end
 	end)
 
-	-- Sidebar
-	local Sidebar = Create("Frame", {
-		Name = "Sidebar",
-		Size = UDim2.new(0, 200, 1, -52),
-		Position = UDim2.new(0, 0, 0, 52),
-		BackgroundColor3 = Library.Theme.Sidebar,
-		BorderSizePixel = 0,
+	local Header = Create("Frame", {
+		Name = "Header",
+		Size = UDim2.new(1, 0, 0, 62),
+		BackgroundColor3 = Library.Theme.Surface or Library.Theme.Element,
+		BackgroundTransparency = 0.10,
+		Active = true,
 		Parent = MainFrame,
 	})
-	Corner(Sidebar, 12)
-	Stroke(Sidebar, Library.Theme.Border, 0.45, 1)
-	local Brand = Create("Frame", { Size = UDim2.new(1, -24, 0, 72), Position = UDim2.new(0, 12, 0, 12), BackgroundColor3 = Library.Theme.Element, BackgroundTransparency = 0.08, BorderSizePixel = 0, Parent = Sidebar })
-	Corner(Brand, 12)
-	Stroke(Brand, Library.Theme.Border, 0.45, 1)
-	GlowDot(Brand, 34, UDim2.new(0, 24, 0.5, 0), Library.Theme.Accent, 0.12)
-	Create("TextLabel", { Size = UDim2.new(0, 28, 0, 28), Position = UDim2.new(0, 10, 0.5, -14), BackgroundTransparency = 1, Text = "✦", TextColor3 = Library.Theme.Background, FontFace = FontBold, TextSize = 20, Parent = Brand })
-	Create("TextLabel", { Size = UDim2.new(1, -58, 0, 22), Position = UDim2.new(0, 50, 0, 12), BackgroundTransparency = 1, Text = options.Name or "ZenUI", TextColor3 = Library.Theme.Text, FontFace = FontBold, TextSize = 15, TextXAlignment = Enum.TextXAlignment.Left, Parent = Brand })
-	Create("TextLabel", { Size = UDim2.new(1, -58, 0, 18), Position = UDim2.new(0, 50, 0, 34), BackgroundTransparency = 1, Text = "Premium control center", TextColor3 = Library.Theme.TextMuted, FontFace = FontStandard, TextSize = 11, TextXAlignment = Enum.TextXAlignment.Left, Parent = Brand })
-
-
-	Create("Frame", {
-		Size = UDim2.new(0, 10, 1, 0),
-		Position = UDim2.new(1, -10, 0, 0),
-		BackgroundColor3 = Library.Theme.Sidebar,
-		BorderSizePixel = 0,
-		Parent = Sidebar,
+	Create("UIGradient", {
+		Rotation = 0,
+		Color = ColorSequence.new({
+			ColorSequenceKeypoint.new(0, Library.Theme.SurfaceStrong or Library.Theme.Element),
+			ColorSequenceKeypoint.new(1, Library.Theme.Surface or Library.Theme.Element),
+		}),
+		Transparency = NumberSequence.new(0.08),
+		Parent = Header,
 	})
 
-	local TabContainer = Create("ScrollingFrame", {
-		Name = "TabContainer",
-		Size = UDim2.new(1, 0, 1, -112),
-		Position = UDim2.new(0, 0, 0, 108),
-		BackgroundTransparency = 1,
-		ScrollBarThickness = 0,
-		CanvasSize = UDim2.new(0, 0, 0, 0),
-		Parent = Sidebar,
+	local BrandIcon = Create("Frame", {
+		Size = UDim2.new(0, 36, 0, 36),
+		Position = UDim2.new(0, 16, 0, 13),
+		BackgroundColor3 = Library.Theme.Accent,
+		Parent = Header,
 	})
-	local TabListLayout = Create("UIListLayout", {
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Padding = UDim.new(0, 7),
-		HorizontalAlignment = Enum.HorizontalAlignment.Center,
-		Parent = TabContainer,
-	})
-	AddConnection(TabListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		TabContainer.CanvasSize = UDim2.new(0, 0, 0, TabListLayout.AbsoluteContentSize.Y + 10)
-	end))
+	Corner(BrandIcon, 11)
+	local BrandIconScale = Create("UIScale", { Scale = 1, Parent = BrandIcon })
+	Create("TextLabel", { Size = UDim2.new(1,0,1,0), BackgroundTransparency = 1, Text = "✦", TextColor3 = Library.Theme.Background, FontFace = FontBold, TextSize = 18, Parent = BrandIcon })
 
-	local ContentContainer = Create("Frame", {
-		Name = "ContentContainer",
-		Size = UDim2.new(1, -200, 1, -52),
-		Position = UDim2.new(0, 200, 0, 52),
-		BackgroundTransparency = 1,
-		Parent = MainFrame,
-	})
-
-	local ContentTop = Create("Frame", { Size = UDim2.new(1, -28, 0, 42), Position = UDim2.new(0, 14, 0, 10), BackgroundColor3 = Library.Theme.Element, BackgroundTransparency = 0.25, BorderSizePixel = 0, Parent = ContentContainer })
-	Corner(ContentTop, 12)
-	Stroke(ContentTop, Library.Theme.Border, 0.5, 1)
-	Create("TextLabel", { Size = UDim2.new(1, -24, 1, 0), Position = UDim2.new(0, 14, 0, 0), BackgroundTransparency = 1, Text = "Workspace", TextColor3 = Library.Theme.Text, FontFace = FontBold, TextSize = 13, TextXAlignment = Enum.TextXAlignment.Left, Parent = ContentTop })
 	Create("TextLabel", {
-		Name = "Title",
-		Size = UDim2.new(1, -60, 1, 0),
-		Position = UDim2.new(0, 18, 0, 0),
+		Size = UDim2.new(0, 270, 0, 22),
+		Position = UDim2.new(0, 62, 0, 10),
 		BackgroundTransparency = 1,
-		Text = options.Name or "Window",
+		Text = options.Name or "ZenUI",
 		TextColor3 = Library.Theme.Text,
 		FontFace = FontBold,
 		TextSize = 17,
 		TextXAlignment = Enum.TextXAlignment.Left,
 		Parent = Header,
 	})
-
-	-- Window controls
-	local WindowState = { Minimized = false, Closed = false }
-	local RestoreHeight = 520
-
-	-- Floating launcher: stays visible after Close so the UI can be reopened.
-	local ReopenButton = Create("TextButton", {
-		Name = "ReopenButton",
-		Size = UDim2.new(0, 52, 0, 52),
-		AnchorPoint = Vector2.new(1, 1),
-		Position = UDim2.new(1, -24, 1, -24),
-		BackgroundColor3 = Library.Theme.Element,
-		BackgroundTransparency = 0.08,
-		Text = "Z",
-		TextColor3 = Library.Theme.Accent,
-		FontFace = FontBold,
-		TextSize = 20,
-		AutoButtonColor = false,
-		Visible = false,
-		ZIndex = 200,
-		Parent = Library.ScreenGui,
+	Create("TextLabel", {
+		Size = UDim2.new(0, 270, 0, 16),
+		Position = UDim2.new(0, 62, 0, 31),
+		BackgroundTransparency = 1,
+		Text = "Adaptive interface",
+		TextColor3 = Library.Theme.TextMuted,
+		FontFace = FontStandard,
+		TextSize = 11,
+		TextXAlignment = Enum.TextXAlignment.Left,
+		Parent = Header,
 	})
-	AddInstance(ReopenButton)
-	Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = ReopenButton })
-	Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1.2, Transparency = 0.15, Parent = ReopenButton })
-	local ReopenScale = Create("UIScale", { Scale = 0.7, Parent = ReopenButton })
 
-	local function ShowLauncher()
-		ReopenButton.Visible = true
-		SpringTween(ReopenScale, { Scale = 1 }, 0.35)
+	local SearchBox = Create("TextBox", {
+		Name = "CommandSearch",
+		Size = UDim2.new(0, 270, 0, 36),
+		Position = UDim2.new(0.5, -135, 0.5, -18),
+		BackgroundColor3 = Library.Theme.Background,
+		BackgroundTransparency = 0.18,
+		Text = "",
+		PlaceholderText = "Search tabs...   Ctrl + K",
+		TextColor3 = Library.Theme.Text,
+		PlaceholderColor3 = Library.Theme.TextMuted,
+		ClearTextOnFocus = false,
+		FontFace = FontStandard,
+		TextSize = 12,
+		Parent = Header,
+	})
+	Corner(SearchBox, 10)
+	Stroke(SearchBox, Library.Theme.Border, 0.35, 1)
+
+	local MinimizeButton, CloseButton
+	local ThemeMini, CycleTheme
+	local dragInput, dragging, dragStart, startPos
+	local function IsOverGui(guiObject, pos)
+		if not guiObject or not guiObject.Visible then return false end
+		local p, z = guiObject.AbsolutePosition, guiObject.AbsoluteSize
+		return pos.X >= p.X and pos.X <= p.X + z.X and pos.Y >= p.Y and pos.Y <= p.Y + z.Y
 	end
-
-	local function HideLauncher()
-		SpringTween(ReopenScale, { Scale = 0.7 }, 0.2)
-		task.delay(0.2, function()
-			if ReopenButton.Parent then ReopenButton.Visible = false end
-		end)
-	end
-
-	local function MakeHeaderButton(name, text, xOffset)
-		local button = Create("TextButton", {
-			Name = name,
-			Size = UDim2.new(0, 30, 0, 30),
-			Position = UDim2.new(1, xOffset, 0.5, -15),
-			BackgroundColor3 = Library.Theme.Element,
-			Text = text,
-			TextColor3 = Library.Theme.TextMuted,
-			FontFace = FontBold,
-			TextSize = 14,
-			AutoButtonColor = false,
-			Parent = Header,
-		})
-		Create("UICorner", { CornerRadius = UDim.new(0, 9), Parent = button })
-		Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1, Transparency = 0.35, Parent = button })
-		AddConnection(button.MouseEnter:Connect(function()
-			SpringTween(button, { Size = UDim2.new(0, 32, 0, 32), Position = UDim2.new(1, xOffset - 1, 0.5, -16), BackgroundColor3 = Library.Theme.ElementHover }, 0.18)
-		end))
-		AddConnection(button.MouseLeave:Connect(function()
-			Tween(button, { Size = UDim2.new(0, 30, 0, 30), Position = UDim2.new(1, xOffset, 0.5, -15), BackgroundColor3 = Library.Theme.Element }, 0.16)
-		end))
-		return button
-	end
-
-	MinimizeButton = MakeHeaderButton("Minimize", "—", -68)
-	CloseButton = MakeHeaderButton("Close", "×", -34)
-
-	local function RestoreWindow()
-		WindowState.Minimized = false
-		Sidebar.Visible = true
-		ContentContainer.Visible = true
-		SpringTween(MainFrame, { Size = UDim2.new(0, 820, 0, RestoreHeight) }, 0.34)
-		Tween(MinimizeButton, { TextColor3 = Library.Theme.TextMuted }, 0.15)
-	end
-
-	function WindowState:Minimize()
-		if WindowState.Closed or WindowState.Minimized then return end
-		WindowState.Minimized = true
-		Sidebar.Visible = false
-		ContentContainer.Visible = false
-		SpringTween(MainFrame, { Size = UDim2.new(0, 820, 0, 52) }, 0.34)
-		Tween(MinimizeButton, { TextColor3 = Library.Theme.Accent }, 0.15)
-	end
-
-	local function CloseWindow()
-		if WindowState.Closed then return end
-		WindowState.Closed = true
-		Tween(MainFrame, { BackgroundTransparency = 1 }, 0.18)
-		SpringTween(UIScale, { Scale = 0.9 }, 0.22)
-		task.delay(0.2, function()
-			if MainFrame.Parent and WindowState.Closed then
-				MainFrame.Visible = false
-				ShowLauncher()
-			end
-		end)
-	end
-
-	AddConnection(MinimizeButton.MouseButton1Click:Connect(function()
-		if WindowState.Minimized then
-			RestoreWindow()
-		else
-			WindowState:Minimize()
+	AddConnection(Header.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			if IsOverGui(MinimizeButton, input.Position) or IsOverGui(CloseButton, input.Position) or IsOverGui(SearchBox, input.Position) then return end
+			dragging, dragStart, startPos = true, input.Position, MainFrame.Position
 		end
 	end))
+	AddConnection(Header.InputChanged:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
+	end))
+	AddConnection(UserInputService.InputChanged:Connect(function(input)
+		if input == dragInput and dragging and startPos then
+			local d = input.Position - dragStart
+			MainFrame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + d.X, startPos.Y.Scale, startPos.Y.Offset + d.Y)
+		end
+	end))
+	AddConnection(UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
+	end))
+
+	local function MakeHeaderButton(name, text, xOffset)
+		local b = Create("TextButton", {
+			Name = name, Size = UDim2.new(0, 32, 0, 32), Position = UDim2.new(1, xOffset, 0.5, -16),
+			BackgroundColor3 = Library.Theme.Element, Text = text, TextColor3 = Library.Theme.TextMuted,
+			FontFace = FontBold, TextSize = 14, AutoButtonColor = false, Parent = Header,
+		})
+		Corner(b, 10); Stroke(b, Library.Theme.Border, 0.42, 1)
+		AddConnection(b.MouseEnter:Connect(function() SpringTween(b, {Size = UDim2.new(0,35,0,35), Position = UDim2.new(1,xOffset-1.5,0.5,-17.5), BackgroundColor3 = Library.Theme.ElementHover}, 0.16) end))
+		AddConnection(b.MouseLeave:Connect(function() Tween(b, {Size = UDim2.new(0,32,0,32), Position = UDim2.new(1,xOffset,0.5,-16), BackgroundColor3 = Library.Theme.Element}, 0.14) end))
+		return b
+	end
+	local ThemeButton = MakeHeaderButton("Theme", "◌", -110)
+	MinimizeButton = MakeHeaderButton("Minimize", "—", -72)
+	CloseButton = MakeHeaderButton("Close", "×", -34)
+
+	CycleTheme = function()
+		local names = Library:GetThemes()
+		local idx = table.find(names, Library.ThemeName) or 1
+		Library:SetTheme(names[(idx % #names) + 1])
+		if ThemeMini then ThemeMini.Text = Library.ThemeName end
+	end
+	AddConnection(ThemeButton.MouseButton1Click:Connect(CycleTheme))
+	AddConnection(BrandIcon.MouseEnter:Connect(function() SpringTween(BrandIconScale, {Scale = 1.08}, 0.22) end))
+	AddConnection(BrandIcon.MouseLeave:Connect(function() SpringTween(BrandIconScale, {Scale = 1}, 0.18) end))
+
+	local HeaderGlow = Create("Frame", { Size = UDim2.new(1,-32,0,2), Position = UDim2.new(0,16,1,-2), BackgroundColor3 = Library.Theme.Accent, BackgroundTransparency = 0.12, BorderSizePixel = 0, Parent = Header })
+	task.spawn(function() while HeaderGlow.Parent do Tween(HeaderGlow,{BackgroundTransparency=0.38},1.0); task.wait(1.0); Tween(HeaderGlow,{BackgroundTransparency=0.05},1.0); task.wait(1.0) end end)
+
+	local SidebarWidth = 214
+	local Sidebar = Create("Frame", {
+		Name = "Sidebar", Size = UDim2.new(0, SidebarWidth, 1, -62), Position = UDim2.new(0,0,0,62),
+		BackgroundColor3 = Library.Theme.Sidebar, BackgroundTransparency = 0.08, BorderSizePixel = 0, Parent = MainFrame,
+	})
+	Corner(Sidebar, 14); Stroke(Sidebar, Library.Theme.Border, 0.42, 1)
+
+	local Brand = Create("Frame", { Size = UDim2.new(1,-24,0,56), Position = UDim2.new(0,12,0,12), BackgroundColor3 = Library.Theme.SurfaceStrong or Library.Theme.Element, Parent = Sidebar })
+	Corner(Brand, 12); Stroke(Brand, Library.Theme.Border, 0.46, 1)
+	local BrandMarker = AddAccentRail(Brand)
+	Create("TextLabel", { Size=UDim2.new(1,-24,0,16), Position=UDim2.new(0,14,0,9), BackgroundTransparency=1, Text="NAVIGATION", TextColor3=Library.Theme.TextMuted, FontFace=FontBold, TextSize=9, TextXAlignment=Enum.TextXAlignment.Left, Parent=Brand })
+	Create("TextLabel", { Name="BrandHint", Size=UDim2.new(1,-24,0,22), Position=UDim2.new(0,14,0,24), BackgroundTransparency=1, Text="Control panel", TextColor3=Library.Theme.Text, FontFace=FontBold, TextSize=13, TextXAlignment=Enum.TextXAlignment.Left, Parent=Brand })
+
+	local CollapseButton = Create("TextButton", { Size=UDim2.new(0,28,0,28), Position=UDim2.new(1,-40,0,26), BackgroundColor3=Library.Theme.Element, Text="‹", TextColor3=Library.Theme.TextMuted, FontFace=FontBold, TextSize=17, AutoButtonColor=false, Parent=Sidebar })
+	Corner(CollapseButton, 9); Stroke(CollapseButton, Library.Theme.Border, 0.5, 1)
+	local Collapsed = false
+
+	local TabContainer = Create("ScrollingFrame", { Name="TabContainer", Size=UDim2.new(1,-12,1,-92), Position=UDim2.new(0,6,0,78), BackgroundTransparency=1, ScrollBarThickness=0, CanvasSize=UDim2.new(0,0,0,0), Parent=Sidebar })
+	local TabListLayout = Create("UIListLayout", { SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,7), HorizontalAlignment=Enum.HorizontalAlignment.Center, Parent=TabContainer })
+	AddConnection(TabListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() TabContainer.CanvasSize=UDim2.new(0,0,0,TabListLayout.AbsoluteContentSize.Y+10) end))
+
+	local SidebarFooter = Create("Frame", { Size=UDim2.new(1,-24,0,46), Position=UDim2.new(0,12,1,-58), BackgroundColor3=Library.Theme.Element, BackgroundTransparency=0.22, BorderSizePixel=0, Parent=Sidebar })
+	Corner(SidebarFooter,11); Stroke(SidebarFooter,Library.Theme.Border,0.55,1)
+	local FooterDot = GlowDot(SidebarFooter,8,UDim2.new(0,14,0.5,0),Library.Theme.Accent,0.08)
+	local FooterText = Create("TextLabel", { Size=UDim2.new(1,-34,0,18), Position=UDim2.new(0,28,0,6), BackgroundTransparency=1, Text="UI ENGINE", TextColor3=Library.Theme.TextMuted, FontFace=FontBold, TextSize=9, TextXAlignment=Enum.TextXAlignment.Left, Parent=SidebarFooter })
+	Create("TextLabel", { Size=UDim2.new(1,-34,0,16), Position=UDim2.new(0,28,0,23), BackgroundTransparency=1, Text="ZenUI Core", TextColor3=Library.Theme.Text, FontFace=FontBold, TextSize=11, TextXAlignment=Enum.TextXAlignment.Left, Parent=SidebarFooter })
+	task.spawn(function() while FooterDot.Parent do Tween(FooterDot,{BackgroundTransparency=0.38},0.9); task.wait(0.9); Tween(FooterDot,{BackgroundTransparency=0.06},0.9); task.wait(0.9) end end)
+
+	local ContentContainer = Create("Frame", { Name="ContentContainer", Size=UDim2.new(1,-SidebarWidth,1,-62), Position=UDim2.new(0,SidebarWidth,0,62), BackgroundTransparency=1, Parent=MainFrame })
+	local ContentTop = Create("Frame", { Size=UDim2.new(1,-28,0,48), Position=UDim2.new(0,14,0,10), BackgroundColor3=Library.Theme.Surface or Library.Theme.Element, BackgroundTransparency=0.10, BorderSizePixel=0, Parent=ContentContainer })
+	Corner(ContentTop,12); Stroke(ContentTop,Library.Theme.Border,0.45,1)
+	local TopSheen = Create("Frame", { Size=UDim2.new(0,2,1,-12), Position=UDim2.new(0,6,0,6), BackgroundColor3=Library.Theme.Accent, BackgroundTransparency=0.18, BorderSizePixel=0, Parent=ContentTop })
+	Corner(TopSheen,2)
+	task.spawn(function() while TopSheen.Parent do Tween(TopSheen,{BackgroundTransparency=0.48},1.1); task.wait(1.1); Tween(TopSheen,{BackgroundTransparency=0.10},1.1); task.wait(1.1) end end)
+	local PageKicker = Create("TextLabel", { Size=UDim2.new(1,-220,0,15), Position=UDim2.new(0,14,0,7), BackgroundTransparency=1, Text="WORKSPACE", TextColor3=Library.Theme.TextMuted, FontFace=FontBold, TextSize=9, TextXAlignment=Enum.TextXAlignment.Left, Parent=ContentTop })
+	local CurrentPageLabel = Create("TextLabel", { Size=UDim2.new(1,-220,0,22), Position=UDim2.new(0,14,0,20), BackgroundTransparency=1, Text="Select a tab", TextColor3=Library.Theme.Text, FontFace=FontBold, TextSize=14, TextXAlignment=Enum.TextXAlignment.Left, Parent=ContentTop })
+	ThemeMini = Create("TextButton", { Size=UDim2.new(0,100,0,30), Position=UDim2.new(1,-112,0.5,-15), BackgroundColor3=Library.Theme.Element, Text=Library.ThemeName, TextColor3=Library.Theme.Accent, FontFace=FontBold, TextSize=10, AutoButtonColor=false, Parent=ContentTop })
+	Corner(ThemeMini,9); Stroke(ThemeMini,Library.Theme.Border,0.45,1)
+	AddConnection(ThemeMini.MouseButton1Click:Connect(CycleTheme))
+
+	local WindowState = { Minimized=false, Closed=false }
+	local RestoreHeight = 570
+	local ReopenButton = Create("TextButton", { Name="ReopenButton", Size=UDim2.new(0,58,0,58), AnchorPoint=Vector2.new(1,1), Position=UDim2.new(1,-24,1,-24), BackgroundColor3=Library.Theme.Element, Text="Z", TextColor3=Library.Theme.Accent, FontFace=FontBold, TextSize=21, AutoButtonColor=false, Visible=false, ZIndex=200, Parent=Library.ScreenGui })
+	AddInstance(ReopenButton); Corner(ReopenButton,18); Stroke(ReopenButton,Library.Theme.Border,0.12,1.3)
+	local ReopenScale=Create("UIScale",{Scale=0.7,Parent=ReopenButton})
+	local function ShowLauncher() ReopenButton.Visible=true; SpringTween(ReopenScale,{Scale=1},0.35) end
+	local function HideLauncher() SpringTween(ReopenScale,{Scale=0.7},0.18); task.delay(0.18,function() if ReopenButton.Parent then ReopenButton.Visible=false end end) end
+
+	local function RestoreWindow() WindowState.Minimized=false; Sidebar.Visible=true; ContentContainer.Visible=true; SpringTween(MainFrame,{Size=UDim2.new(0,900,0,RestoreHeight)},0.34); end
+	function WindowState:Minimize() if WindowState.Closed or WindowState.Minimized then return end; WindowState.Minimized=true; Sidebar.Visible=false; ContentContainer.Visible=false; SpringTween(MainFrame,{Size=UDim2.new(0,900,0,62)},0.34) end
+	local function CloseWindow() if WindowState.Closed then return end; WindowState.Closed=true; Tween(MainFrame,{BackgroundTransparency=1},0.18); SpringTween(MainScale,{Scale=0.9},0.22); task.delay(0.22,function() if MainFrame.Parent and WindowState.Closed then MainFrame.Visible=false; ShowLauncher() end end) end
+	AddConnection(MinimizeButton.MouseButton1Click:Connect(function() if WindowState.Minimized then RestoreWindow() else WindowState:Minimize() end end))
 	AddConnection(CloseButton.MouseButton1Click:Connect(CloseWindow))
+	AddConnection(ReopenButton.MouseEnter:Connect(function() SpringTween(ReopenButton,{Size=UDim2.new(0,64,0,64),BackgroundColor3=Library.Theme.ElementHover},0.16) end))
+	AddConnection(ReopenButton.MouseLeave:Connect(function() Tween(ReopenButton,{Size=UDim2.new(0,58,0,58),BackgroundColor3=Library.Theme.Element},0.14) end))
+	AddConnection(ReopenButton.MouseButton1Click:Connect(function() WindowState.Closed=false; WindowState.Minimized=false; HideLauncher(); MainFrame.Visible=true; MainFrame.BackgroundTransparency=1; MainScale.Scale=0.88; Sidebar.Visible=true; ContentContainer.Visible=true; SpringTween(MainScale,{Scale=1},0.38); Tween(MainFrame,{BackgroundTransparency=0},0.22) end))
 
-	AddConnection(ReopenButton.MouseEnter:Connect(function()
-		SpringTween(ReopenButton, { Size = UDim2.new(0, 56, 0, 56), BackgroundColor3 = Library.Theme.ElementHover }, 0.16)
-	end))
-	AddConnection(ReopenButton.MouseLeave:Connect(function()
-		Tween(ReopenButton, { Size = UDim2.new(0, 52, 0, 52), BackgroundColor3 = Library.Theme.Element }, 0.14)
-	end))
-	AddConnection(ReopenButton.MouseButton1Click:Connect(function()
-		WindowState.Closed = false
-		WindowState.Minimized = false
-		HideLauncher()
-		MainFrame.Visible = true
-		MainFrame.BackgroundTransparency = 1
-		UIScale.Scale = 0.9
-		SpringTween(UIScale, { Scale = 1 }, 0.38)
-		Tween(MainFrame, { BackgroundTransparency = 0 }, 0.22)
-	end))
-
-	-- UI visibility toggle
-	local WindowVisible = true
-	local function ShowWindow()
-		WindowVisible = true
-		MainFrame.Visible = true
-		SpringTween(UIScale, { Scale = 1 }, 0.28)
-		Tween(MainFrame, { BackgroundTransparency = 0 }, 0.22)
-	end
-	local function HideWindow()
-		WindowVisible = false
-		Tween(MainFrame, { BackgroundTransparency = 1 }, 0.2)
-		Tween(UIScale, { Scale = 0.94 }, 0.22)
-		task.delay(0.23, function()
-			if not WindowVisible and MainFrame.Parent then MainFrame.Visible = false end
-		end)
-	end
-
+	local WindowVisible=true
+	local function ShowWindow() WindowVisible=true; WindowState.Closed=false; MainFrame.Visible=true; Sidebar.Visible=not WindowState.Minimized; ContentContainer.Visible=not WindowState.Minimized; MainFrame.BackgroundTransparency=0; SpringTween(MainScale,{Scale=1},0.28) end
+	local function HideWindow() WindowVisible=false; Tween(MainFrame,{BackgroundTransparency=1},0.2); Tween(MainScale,{Scale=0.94},0.22); task.delay(0.23,function() if not WindowVisible and MainFrame.Parent then MainFrame.Visible=false end end) end
 	function Window:Minimize() WindowState:Minimize() end
 	function Window:Restore() RestoreWindow() end
 	function Window:ToggleMinimize() if WindowState.Minimized then RestoreWindow() else WindowState:Minimize() end end
 	function Window:Close() CloseWindow() end
 	function Window:SetVisible(state) if state then ShowWindow() else HideWindow() end end
+	function Window:CycleTheme() CycleTheme() end
 
-	AddConnection(UserInputService.InputBegan:Connect(function(input, gpe)
+	AddConnection(UserInputService.InputBegan:Connect(function(input,gpe)
 		if gpe or Library.ListeningKeybind then return end
-		if input.KeyCode == ToggleKeybind then
-			if WindowVisible then HideWindow() else ShowWindow() end
+		if input.KeyCode == ToggleKeybind then if WindowVisible then HideWindow() else ShowWindow() end end
+		if input.KeyCode == Enum.KeyCode.K and UserInputService:IsKeyDown(Enum.KeyCode.LeftControl) then SearchBox:CaptureFocus() end
+	end))
+	AddConnection(SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+		local query=string.lower(SearchBox.Text or "")
+		for _, entry in ipairs(Window.Tabs) do
+			local label=string.lower(tostring(entry.Name or ""))
+			entry.Button.Visible = query=="" or string.find(label,query,1,true)~=nil
+		end
+		if Window.CurrentTab and Window.CurrentTab.Page then
+			for _, child in ipairs(Window.CurrentTab.Page:GetChildren()) do
+				if child:IsA("GuiObject") and child:GetAttribute("ZenSearchText") then
+					child.Visible = query=="" or string.find(string.lower(child:GetAttribute("ZenSearchText")),query,1,true)~=nil
+				end
+			end
 		end
 	end))
 
-	function Window:Destroy()
-		Library:Destroy()
-	end
+	function Window:Destroy() Library:Destroy() end
+
+	task.spawn(function()
+		if MainFrame.Parent then
+			Tween(MainFrame,{BackgroundTransparency=0},0.26); SpringTween(MainScale,{Scale=1},0.48)
+		end
+	end)
 
 	-- ============================= Tabs =============================
 
@@ -909,21 +877,43 @@ function Library:CreateWindow(options)
 		tabOptions = tabOptions or {}
 		local Tab: { [string]: any } = { Elements = {} }
 		local TabName = tabOptions.Name or "Tab"
+		local TabIconText = tabOptions.Icon or "◆"
 
 		local TabButton = Create("TextButton", {
 			Name = TabName .. "Btn",
-			Size = UDim2.new(1, -24, 0, 44),
+			Size = UDim2.new(1, -24, 0, 46),
 			BackgroundColor3 = Library.Theme.Element,
-			Text = "   " .. TabName,
+			Text = "",
 			TextColor3 = Library.Theme.TextMuted,
 			FontFace = FontStandard,
 			TextSize = 14,
 			AutoButtonColor = false,
 			Parent = TabContainer,
 		})
-		Corner(TabButton, 11)
-		local TabAccent = Create("Frame", { Size = UDim2.new(0, 3, 0, 18), Position = UDim2.new(0, 6, 0.5, -9), BackgroundColor3 = Library.Theme.Accent, BackgroundTransparency = 0, BorderSizePixel = 0, Visible = #Window.Tabs == 0, Parent = TabButton })
+		Corner(TabButton, 12); Stroke(TabButton, Library.Theme.Border, 0.68, 1)
+		local TabIcon = Create("TextLabel", { Size=UDim2.new(0,26,0,26), Position=UDim2.new(0,10,0.5,-13), BackgroundTransparency=1, Text=TabIconText, TextColor3=Library.Theme.TextMuted, FontFace=FontBold, TextSize=12, Parent=TabButton })
+		local TabText = Create("TextLabel", { Size=UDim2.new(1,-60,1,0), Position=UDim2.new(0,40,0,0), BackgroundTransparency=1, Text=TabName, TextColor3=Library.Theme.TextMuted, FontFace=FontBold, TextSize=12, TextXAlignment=Enum.TextXAlignment.Left, Parent=TabButton })
+		local TabAccent = Create("Frame", { Size = UDim2.new(0, 3, 0, 22), Position = UDim2.new(0, 4, 0.5, -11), BackgroundColor3 = Library.Theme.Accent, BackgroundTransparency = 0, BorderSizePixel = 0, Visible = #Window.Tabs == 0, Parent = TabButton })
 		Corner(TabAccent, 3)
+		local Badge = nil
+		if tabOptions.Badge then
+			Badge = Create("TextLabel", { Size=UDim2.new(0,30,0,20), Position=UDim2.new(1,-38,0.5,-10), BackgroundColor3=Library.Theme.SurfaceStrong or Library.Theme.Element, Text=tostring(tabOptions.Badge), TextColor3=Library.Theme.TextMuted, FontFace=FontBold, TextSize=9, Parent=TabButton })
+			Corner(Badge,7)
+		end
+		AddConnection(TabButton.MouseEnter:Connect(function()
+			if Window.CurrentTab ~= Tab then
+				Tween(TabButton, { BackgroundColor3 = Library.Theme.ElementHover }, 0.14)
+				Tween(TabIcon, { TextColor3 = Library.Theme.Text }, 0.14)
+				Tween(TabText, { TextColor3 = Library.Theme.Text }, 0.14)
+			end
+		end))
+		AddConnection(TabButton.MouseLeave:Connect(function()
+			if Window.CurrentTab ~= Tab then
+				Tween(TabButton, { BackgroundColor3 = Library.Theme.Element }, 0.14)
+				Tween(TabIcon, { TextColor3 = Library.Theme.TextMuted }, 0.14)
+				Tween(TabText, { TextColor3 = Library.Theme.TextMuted }, 0.14)
+			end
+		end))
 
 		local Page = Create("ScrollingFrame", {
 			Name = TabName .. "Page",
@@ -936,6 +926,7 @@ function Library:CreateWindow(options)
 			Visible = false,
 			Parent = ContentContainer,
 		})
+		local PageScale = Create("UIScale", { Scale = 1, Parent = Page })
 		Create("UIPadding", {
 			PaddingTop = UDim.new(0, 18),
 			PaddingBottom = UDim.new(0, 10),
@@ -952,34 +943,45 @@ function Library:CreateWindow(options)
 			Page.CanvasSize = UDim2.new(0, 0, 0, PageLayout.AbsoluteContentSize.Y + 20)
 		end))
 
-		AddConnection(TabButton.MouseEnter:Connect(function()
-			if Window.CurrentTab ~= Tab then Tween(TabButton, { BackgroundColor3 = Library.Theme.ElementHover, TextColor3 = Library.Theme.Text }, 0.16) end
-		end))
-		AddConnection(TabButton.MouseLeave:Connect(function()
-			if Window.CurrentTab ~= Tab then Tween(TabButton, { BackgroundColor3 = Library.Theme.Element, TextColor3 = Library.Theme.TextMuted }, 0.16) end
-		end))
 
 		AddConnection(TabButton.MouseButton1Click:Connect(function()
 			for _, tb in ipairs(Window.Tabs) do
 				tb.Page.Visible = false
 				tb.Accent.Visible = false
-				Tween(tb.Button, { BackgroundColor3 = Library.Theme.Element, TextColor3 = Library.Theme.TextMuted }, 0.18)
+				Tween(tb.Button, { BackgroundColor3 = Library.Theme.Element }, 0.18)
+				Tween(tb.Icon, { TextColor3 = Library.Theme.TextMuted }, 0.18)
+				Tween(tb.Text, { TextColor3 = Library.Theme.TextMuted }, 0.18)
 			end
 			Window.CurrentTab = Tab
+			CurrentPageLabel.Text = TabName
+			PageKicker.Text = string.upper(TabName)
 			Page.Visible = true
+			PageScale.Scale = 0.985
 			TabAccent.Visible = true
-			SpringTween(TabButton, { BackgroundColor3 = Library.Theme.Accent, TextColor3 = Library.Theme.Background }, 0.24)
+			SpringTween(PageScale, { Scale = 1 }, 0.30)
+			SpringTween(TabButton, { BackgroundColor3 = Library.Theme.Accent }, 0.24)
+			Tween(TabIcon, { TextColor3 = Library.Theme.Background }, 0.18)
+			Tween(TabText, { TextColor3 = Library.Theme.Background }, 0.18)
+			local q=string.lower(SearchBox.Text or "")
+			for _, child in ipairs(Page:GetChildren()) do
+				if child:IsA("GuiObject") and child:GetAttribute("ZenSearchText") then
+					child.Visible = q=="" or string.find(string.lower(child:GetAttribute("ZenSearchText")),q,1,true)~=nil
+				end
+			end
 		end))
 
 		if #Window.Tabs == 0 then
 			Page.Visible = true
 			Window.CurrentTab = Tab
 			TabButton.BackgroundColor3 = Library.Theme.Accent
-			TabButton.TextColor3 = Library.Theme.Background
+			TabIcon.TextColor3 = Library.Theme.Background
+			TabText.TextColor3 = Library.Theme.Background
 			TabAccent.Visible = true
+			CurrentPageLabel.Text = TabName
+			PageKicker.Text = string.upper(TabName)
 		end
 
-		table.insert(Window.Tabs, { Button = TabButton, Page = Page, Accent = TabAccent })
+		table.insert(Window.Tabs, { Button = TabButton, Page = Page, Accent = TabAccent, Icon = TabIcon, Text = TabText, Name = TabName, PageScale = PageScale })
 
 		-- ============================= Toggle =============================
 
@@ -988,11 +990,12 @@ function Library:CreateWindow(options)
 			if tOpts.Flag then Library.Flags[tOpts.Flag] = Toggle.Value end
 
 			local Container = Create("Frame", {
-				Size = UDim2.new(1, 0, 0, 36),
+				Size = UDim2.new(1, 0, 0, 40),
 				BackgroundColor3 = Library.Theme.Element,
 				Parent = Page,
 			})
-			Create("UICorner", { CornerRadius = UDim.new(0, 9), Parent = Container })
+			Container:SetAttribute("ZenSearchText", tOpts.Name or "Toggle")
+			Corner(Container, 11); Stroke(Container, Library.Theme.Border, 0.45, 1); CardMotion(Container)
 			Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1, Transparency = 0.35, Parent = Container })
 
 			Create("TextLabel", {
@@ -1014,6 +1017,8 @@ function Library:CreateWindow(options)
 				Parent = Container,
 			})
 			Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = SwitchArea })
+			local SwitchGlow = Create("Frame", { Size=UDim2.new(1,8,1,8), Position=UDim2.new(0.5,-4,0.5,-4), AnchorPoint=Vector2.new(0.5,0.5), BackgroundColor3=Library.Theme.Accent, BackgroundTransparency=Toggle.Value and 0.88 or 1, BorderSizePixel=0, ZIndex=SwitchArea.ZIndex-1, Parent=SwitchArea })
+			Corner(SwitchGlow,20)
 
 			local Indicator = Create("Frame", {
 				Size = UDim2.new(0, 16, 0, 16),
@@ -1038,6 +1043,7 @@ function Library:CreateWindow(options)
 				self.Value = val
 				if tOpts.Flag then Library.Flags[tOpts.Flag] = val end
 				Tween(SwitchArea, { BackgroundColor3 = val and Library.Theme.Accent or Library.Theme.Border }, 0.2)
+				Tween(SwitchGlow, { BackgroundTransparency = val and 0.86 or 1 }, 0.22)
 				Tween(Indicator, {
 					Position = val and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8),
 				}, 0.2)
@@ -1087,11 +1093,12 @@ function Library:CreateWindow(options)
 			if sOpts.Flag then Library.Flags[sOpts.Flag] = Slider.Value end
 
 			local Container = Create("Frame", {
-				Size = UDim2.new(1, 0, 0, 50),
+				Size = UDim2.new(1, 0, 0, 56),
 				BackgroundColor3 = Library.Theme.Element,
 				Parent = Page,
 			})
-			Create("UICorner", { CornerRadius = UDim.new(0, 9), Parent = Container })
+			Container:SetAttribute("ZenSearchText", sOpts.Name or "Slider")
+			Corner(Container, 11); Stroke(Container, Library.Theme.Border, 0.45, 1); CardMotion(Container)
 			Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1, Transparency = 0.35, Parent = Container })
 
 			Create("TextLabel", {
@@ -1204,12 +1211,13 @@ function Library:CreateWindow(options)
 			local Expanded = false
 
 			local Container = Create("Frame", {
-				Size = UDim2.new(1, 0, 0, 36),
+				Size = UDim2.new(1, 0, 0, 38),
 				BackgroundColor3 = Library.Theme.Element,
 				ClipsDescendants = true,
 				Parent = Page,
 			})
-			Create("UICorner", { CornerRadius = UDim.new(0, 9), Parent = Container })
+			Container:SetAttribute("ZenSearchText", dOpts.Name or "Dropdown")
+			Corner(Container, 11); Stroke(Container, Library.Theme.Border, 0.45, 1); CardMotion(Container)
 
 			local TopBar = Create("TextButton", {
 				Size = UDim2.new(1, 0, 0, 36),
@@ -1362,11 +1370,12 @@ function Library:CreateWindow(options)
 			local Listening = false
 
 			local Container = Create("Frame", {
-				Size = UDim2.new(1, 0, 0, 36),
+				Size = UDim2.new(1, 0, 0, 40),
 				BackgroundColor3 = Library.Theme.Element,
 				Parent = Page,
 			})
-			Create("UICorner", { CornerRadius = UDim.new(0, 9), Parent = Container })
+			Container:SetAttribute("ZenSearchText", kOpts.Name or "Keybind")
+			Corner(Container, 11); Stroke(Container, Library.Theme.Border, 0.45, 1); CardMotion(Container)
 			Create("TextLabel", {
 				Size = UDim2.new(1, -120, 1, 0),
 				Position = UDim2.new(0, 10, 0, 0),
@@ -1451,11 +1460,12 @@ function Library:CreateWindow(options)
 		function Tab:CreateTextBox(tOpts)
 			tOpts = tOpts or {}
 			local Container = Create("Frame", {
-				Size = UDim2.new(1, 0, 0, 40),
+				Size = UDim2.new(1, 0, 0, 42),
 				BackgroundColor3 = Library.Theme.Element,
 				Parent = Page,
 			})
-			Create("UICorner", { CornerRadius = UDim.new(0, 9), Parent = Container })
+			Container:SetAttribute("ZenSearchText", tOpts.Name or "TextBox")
+			Corner(Container, 11); Stroke(Container, Library.Theme.Border, 0.45, 1); CardMotion(Container)
 			Create("TextLabel", {
 				Size = UDim2.new(1, -160, 1, 0),
 				Position = UDim2.new(0, 10, 0, 0),
@@ -1512,7 +1522,8 @@ function Library:CreateWindow(options)
 				AutoButtonColor = false,
 				Parent = Page,
 			})
-			Create("UICorner", { CornerRadius = UDim.new(0, 9), Parent = Btn })
+			Btn:SetAttribute("ZenSearchText", bOpts.Name or "Button")
+			Corner(Btn, 11); Stroke(Btn, Library.Theme.Border, 0.45, 1); CardMotion(Btn)
 			AddConnection(Btn.MouseEnter:Connect(function() Tween(Btn, { BackgroundColor3 = Library.Theme.ElementHover }, 0.2) end))
 			AddConnection(Btn.MouseLeave:Connect(function() Tween(Btn, { BackgroundColor3 = Library.Theme.Element }, 0.2) end))
 			AddConnection(Btn.MouseButton1Down:Connect(function() SpringTween(Btn, { Size = UDim2.new(1, -4, 0, 34) }, 0.12) end))
@@ -1552,7 +1563,8 @@ function Library:CreateWindow(options)
 				BackgroundColor3 = Library.Theme.Element,
 				Parent = Page,
 			})
-			Create("UICorner", { CornerRadius = UDim.new(0, 9), Parent = Para })
+			Para:SetAttribute("ZenSearchText", pOpts.Title or "Paragraph")
+			Corner(Para, 11); Stroke(Para, Library.Theme.Border, 0.45, 1); CardMotion(Para)
 			local Title = Create("TextLabel", {
 				Size = UDim2.new(1, -20, 0, 24),
 				Position = UDim2.new(0, 10, 0, 5),
@@ -1629,7 +1641,8 @@ function Library:CreateWindow(options)
 				ClipsDescendants = true,
 				Parent = Page,
 			})
-			Create("UICorner", { CornerRadius = UDim.new(0, 9), Parent = Container })
+			Container:SetAttribute("ZenSearchText", cOpts.Name or "Color Picker")
+			Corner(Container, 11); Stroke(Container, Library.Theme.Border, 0.45, 1); CardMotion(Container)
 
 			local TopBar = Create("TextButton", {
 				Size = UDim2.new(1, 0, 0, 36),
