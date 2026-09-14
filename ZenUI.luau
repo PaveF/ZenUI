@@ -1,15 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
 local HttpService = game:GetService("HttpService")
 local TweenService = game:GetService("TweenService")
 local UserInputService = game:GetService("UserInputService")
@@ -1176,7 +1164,8 @@ function Library:CreateWindow(options)
 
 			local SwitchArea = Create("Frame", {
 				Size = UDim2.new(0, 44, 0, 24),
-				Position = UDim2.new(1, -54, 0.5, -12),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.new(1, -32, 0.5, 0),
 				BackgroundColor3 = Toggle.Value and Library.Theme.Accent or Library.Theme.SurfaceStrong,
 				Parent = Container,
 			})
@@ -1206,7 +1195,8 @@ function Library:CreateWindow(options)
 
 			local Btn = Create("TextButton", {
 				Size = UDim2.new(0, 44, 0, 24),
-				Position = UDim2.new(1, -54, 0.5, -12),
+				AnchorPoint = Vector2.new(0.5, 0.5),
+				Position = UDim2.new(1, -32, 0.5, 0),
 				BackgroundTransparency = 1,
 				Text = "",
 				AutoButtonColor = false,
