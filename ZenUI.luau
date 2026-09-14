@@ -100,6 +100,8 @@ local Library: { [string]: any } = {
 	ThemeName = "Emerald",
 	Theme = table.clone(Themes.Emerald),
 	Themes = Themes,
+	CustomAccent = nil,
+	UIScale = 0.90,
 	ConfigFolder = "UI_Configs",
 	ConfigurationSaving = false,
 }
@@ -297,6 +299,9 @@ function Library:SetTheme(name: string)
 	end
 	Library.ThemeName = name
 	Library.Theme = table.clone(palette)
+	if Library.CustomAccent then
+		Library.Theme.Accent = Library.CustomAccent
+	end
 	local root = Library.ScreenGui
 	if root then
 		local gradient = root:FindFirstChild("MainWindow") and root.MainWindow:FindFirstChildOfClass("UIGradient")
@@ -329,6 +334,21 @@ function Library:SetTheme(name: string)
 						end
 					end)
 				end
+			end
+		end
+	end
+	if Library.CustomAccent and root then
+		for _, inst in ipairs(root:GetDescendants()) do
+			if inst:GetAttribute("ZenThemeRole_Accent") then
+				pcall(function()
+					if inst:IsA("UIStroke") then
+						inst.Color = Library.CustomAccent
+					elseif inst:IsA("TextLabel") or inst:IsA("TextButton") or inst:IsA("TextBox") then
+						inst.TextColor3 = Library.CustomAccent
+					else
+						inst.BackgroundColor3 = Library.CustomAccent
+					end
+				end)
 			end
 		end
 	end
@@ -444,6 +464,27 @@ function Library:GetTheme()
 	return Library.ThemeName
 end
 
+function Library:SetAccentColor(color: Color3)
+	if typeof(color) ~= "Color3" then return end
+	Library.CustomAccent = color
+	Library.Theme.Accent = color
+	local root = Library.ScreenGui
+	if not root then return end
+	for _, inst in ipairs(root:GetDescendants()) do
+		if inst:GetAttribute("ZenThemeRole_Accent") then
+			pcall(function() inst.BackgroundColor3 = color end)
+			pcall(function() inst.TextColor3 = color end)
+			pcall(function() inst.ImageColor3 = color end)
+			pcall(function() inst.Color = color end)
+		end
+	end
+end
+
+function Library:ResetAccentColor()
+	Library.CustomAccent = nil
+	Library:SetTheme(Library.ThemeName)
+end
+
 function Library:Destroy()
 	Log("Destroying previous UI instance...")
 	for _, conn in ipairs(self.Connections) do
@@ -491,6 +532,8 @@ function Library.new(settings)
 		Library:Destroy()
 	end
 	Library.Debug = settings.Debug or false
+	Library.CustomAccent = typeof(settings.AccentColor) == "Color3" and settings.AccentColor or nil
+	Library.UIScale = math.clamp(tonumber(settings.UIScale) or 0.90, 0.75, 1.15)
 	Library:SetTheme(settings.Theme or "Emerald")
 
 	local guiParent = safe_gethui()
@@ -649,15 +692,21 @@ function Library:CreateWindow(options)
 		Tabs = {},
 		CurrentTab = nil,
 		Elements = {},
+		Columns = {},
 	}
 
 	Library.ConfigurationSaving = options.ConfigurationSaving or false
 	Library.ConfigFolder = options.ConfigFolder or "UI_Configs"
 	local ToggleKeybind = options.Keybind or Enum.KeyCode.Insert
 
+	local BaseWindowWidth = math.clamp(tonumber(options.Width) or 960, 720, 1400)
+	local BaseWindowHeight = math.clamp(tonumber(options.Height) or 570, 460, 820)
+	local MinWindowWidth, MaxWindowWidth = 720, 1400
+	local MinWindowHeight, MaxWindowHeight = 460, 820
+
 	local MainFrame = Create("Frame", {
 		Name = "MainWindow",
-		Size = UDim2.new(0, 960, 0, 570),
+		Size = UDim2.new(0, BaseWindowWidth, 0, BaseWindowHeight),
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0),
 		BackgroundColor3 = Library.Theme.Background,
@@ -682,7 +731,7 @@ function Library:CreateWindow(options)
 	})
 	pcall(function() WindowGradient:SetAttribute("ZenGradient", true) end)
 
-	local MainScale = Create("UIScale", { Scale = 0.90, Parent = MainFrame })
+	local MainScale = Create("UIScale", { Scale = Library.UIScale, Parent = MainFrame })
 	
 
 	local Header = Create("Frame", {
@@ -749,6 +798,7 @@ function Library:CreateWindow(options)
 
 	local MinimizeButton, CloseButton
 	local ThemeMini, CycleTheme
+	local ResizeHandle
 	local dragInput, dragging, dragStart, startPos
 	local function IsOverGui(guiObject, pos)
 		if not guiObject or not guiObject.Visible then return false end
@@ -757,7 +807,7 @@ function Library:CreateWindow(options)
 	end
 	AddConnection(Header.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
-			if IsOverGui(MinimizeButton, input.Position) or IsOverGui(CloseButton, input.Position) or IsOverGui(SearchBox, input.Position) then return end
+			if IsOverGui(MinimizeButton, input.Position) or IsOverGui(CloseButton, input.Position) or IsOverGui(SearchBox, input.Position) or IsOverGui(ResizeHandle, input.Position) then return end
 			dragging, dragStart, startPos = true, input.Position, MainFrame.Position
 		end
 	end))
@@ -959,15 +1009,26 @@ function Library:CreateWindow(options)
 	AddConnection(ThemeMini.MouseButton1Click:Connect(CycleTheme))
 
 	local WindowState = { Minimized=false, Closed=false }
-	local RestoreHeight = 570
+	local RestoreHeight = BaseWindowHeight
 	local ReopenButton = Create("TextButton", { Name="ReopenButton", Size=UDim2.new(0,58,0,58), AnchorPoint=Vector2.new(1,1), Position=UDim2.new(1,-24,1,-24), BackgroundColor3=Library.Theme.Element, Text="Z", TextColor3=Library.Theme.Text, FontFace=FontBold, TextSize=21, AutoButtonColor=false, Visible=false, ZIndex=200, Parent=Library.ScreenGui })
 	AddInstance(ReopenButton); Corner(ReopenButton,18); Stroke(ReopenButton,Library.Theme.Border,0.12,1.3)
 	local ReopenScale=Create("UIScale",{Scale=0.7,Parent=ReopenButton})
 	local function ShowLauncher() ReopenButton.Visible=true; SpringTween(ReopenScale,{Scale=1},0.35) end
 	local function HideLauncher() SpringTween(ReopenScale,{Scale=0.7},0.18); task.delay(0.18,function() if ReopenButton.Parent then ReopenButton.Visible=false end end) end
 
-	local function RestoreWindow() WindowState.Minimized=false; Sidebar.Visible=true; ContentContainer.Visible=true; SpringTween(MainFrame,{Size=UDim2.new(0,960,0,RestoreHeight)},0.34); end
-	function WindowState:Minimize() if WindowState.Closed or WindowState.Minimized then return end; WindowState.Minimized=true; Sidebar.Visible=false; ContentContainer.Visible=false; SpringTween(MainFrame,{Size=UDim2.new(0,960,0,62)},0.34) end
+	local function RestoreWindow()
+		WindowState.Minimized=false
+		Sidebar.Visible=true
+		ContentContainer.Visible=true
+		SpringTween(MainFrame,{Size=UDim2.new(0,BaseWindowWidth,0,RestoreHeight)},0.34)
+	end
+	function WindowState:Minimize()
+		if WindowState.Closed or WindowState.Minimized then return end
+		WindowState.Minimized=true
+		Sidebar.Visible=false
+		ContentContainer.Visible=false
+		SpringTween(MainFrame,{Size=UDim2.new(0,BaseWindowWidth,0,62)},0.34)
+	end
 	local function CloseWindow()
 		if WindowState.Closed then return end
 		WindowState.Closed = true
@@ -984,7 +1045,7 @@ function Library:CreateWindow(options)
 	AddConnection(CloseButton.MouseButton1Click:Connect(CloseWindow))
 	AddConnection(ReopenButton.MouseEnter:Connect(function() SpringTween(ReopenButton,{Size=UDim2.new(0,64,0,64),BackgroundColor3=Library.Theme.ElementHover},0.16) end))
 	AddConnection(ReopenButton.MouseLeave:Connect(function() Tween(ReopenButton,{Size=UDim2.new(0,58,0,58),BackgroundColor3=Library.Theme.Element},0.14) end))
-	AddConnection(ReopenButton.MouseButton1Click:Connect(function() WindowState.Closed=false; WindowState.Minimized=false; HideLauncher(); MainFrame.Visible=true; MainFrame.BackgroundTransparency=0; MainScale.Scale=0.88; Sidebar.Visible=true; ContentContainer.Visible=true; SpringTween(MainScale,{Scale=1},0.38) end))
+	AddConnection(ReopenButton.MouseButton1Click:Connect(function() WindowState.Closed=false; WindowState.Minimized=false; HideLauncher(); MainFrame.Visible=true; MainFrame.BackgroundTransparency=0; MainFrame.Size=UDim2.new(0,BaseWindowWidth,0,BaseWindowHeight); MainScale.Scale=0.88; Sidebar.Visible=true; ContentContainer.Visible=true; SpringTween(MainScale,{Scale=Library.UIScale},0.38) end))
 
 	local WindowVisible=true
 	local function ShowWindow() WindowVisible=true; WindowState.Closed=false; MainFrame.Visible=true; Sidebar.Visible=not WindowState.Minimized; ContentContainer.Visible=not WindowState.Minimized; MainFrame.BackgroundTransparency=0; SpringTween(MainScale,{Scale=1},0.28) end
@@ -995,6 +1056,45 @@ function Library:CreateWindow(options)
 	function Window:Close() CloseWindow() end
 	function Window:SetVisible(state) if state then ShowWindow() else HideWindow() end end
 	function Window:CycleTheme() CycleTheme() end
+	function Window:SetScale(scale)
+		Library.UIScale = math.clamp(tonumber(scale) or 1, 0.75, 1.15)
+		SpringTween(MainScale, { Scale = Library.UIScale }, 0.20)
+	end
+	function Window:GetScale() return Library.UIScale end
+	function Window:SetSize(width, height)
+		BaseWindowWidth = math.clamp(tonumber(width) or BaseWindowWidth, MinWindowWidth, MaxWindowWidth)
+		BaseWindowHeight = math.clamp(tonumber(height) or BaseWindowHeight, MinWindowHeight, MaxWindowHeight)
+		RestoreHeight = BaseWindowHeight
+		if not WindowState.Minimized then
+			SpringTween(MainFrame, { Size = UDim2.new(0, BaseWindowWidth, 0, BaseWindowHeight) }, 0.24)
+		end
+	end
+	function Window:GetSize() return BaseWindowWidth, BaseWindowHeight end
+
+	ResizeHandle = Create("TextButton", {
+		Name = "ResizeHandle", Size = UDim2.new(0, 28, 0, 28), Position = UDim2.new(1, -28, 1, -28),
+		BackgroundTransparency = 1, Text = "◢", TextColor3 = Library.Theme.TextMuted, TextSize = 12, FontFace = FontBold,
+		AutoButtonColor = false, ZIndex = 50, Parent = MainFrame,
+	})
+	AddInstance(ResizeHandle)
+	local resizing, resizeStart, resizeSize
+	AddConnection(ResizeHandle.InputBegan:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
+			resizing, resizeStart, resizeSize = true, input.Position, Vector2.new(BaseWindowWidth, BaseWindowHeight)
+		end
+	end))
+	AddConnection(UserInputService.InputChanged:Connect(function(input)
+		if not resizing then return end
+		if input.UserInputType ~= Enum.UserInputType.MouseMovement and input.UserInputType ~= Enum.UserInputType.Touch then return end
+		local delta = input.Position - resizeStart
+		BaseWindowWidth = math.clamp(resizeSize.X + delta.X, MinWindowWidth, MaxWindowWidth)
+		BaseWindowHeight = math.clamp(resizeSize.Y + delta.Y, MinWindowHeight, MaxWindowHeight)
+		RestoreHeight = BaseWindowHeight
+		MainFrame.Size = UDim2.new(0, BaseWindowWidth, 0, BaseWindowHeight)
+	end))
+	AddConnection(UserInputService.InputEnded:Connect(function(input)
+		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then resizing = false end
+	end))
 
 	AddConnection(UserInputService.InputBegan:Connect(function(input,gpe)
 		if gpe or Library.ListeningKeybind then return end
@@ -1020,7 +1120,7 @@ function Library:CreateWindow(options)
 
 	task.spawn(function()
 		if MainFrame.Parent then
-			Tween(MainFrame,{BackgroundTransparency=0},0.26); SpringTween(MainScale,{Scale=1},0.48)
+			Tween(MainFrame,{BackgroundTransparency=0},0.26); SpringTween(MainScale,{Scale=Library.UIScale},0.48)
 		end
 	end)
 
@@ -1137,6 +1237,37 @@ function Library:CreateWindow(options)
 
 		
 
+		function Tab:SetColumn(column)
+			if type(column) == "table" and column._Parent then self._ParentOverride = column._Parent else self._ParentOverride = nil end
+			return self
+		end
+
+		function Tab:CreateColumns(countOrOptions)
+			local count, gap = 2, 10
+			if type(countOrOptions) == "number" then
+				count = math.clamp(math.floor(countOrOptions), 2, 4)
+			elseif type(countOrOptions) == "table" then
+				count = math.clamp(math.floor(tonumber(countOrOptions.Count) or 2), 2, 4)
+				gap = math.clamp(tonumber(countOrOptions.Gap) or 10, 0, 24)
+			end
+			local Row = Create("Frame", { Name="Columns", Size=UDim2.new(1,0,0,0), BackgroundTransparency=1, AutomaticSize=Enum.AutomaticSize.Y, LayoutOrder=#self.Elements+1, Parent=Page })
+			Create("UIListLayout", { FillDirection=Enum.FillDirection.Horizontal, SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,gap), Parent=Row })
+			local columns = {}
+			local widthScale = 1 / count
+			for i=1,count do
+				local column = Create("Frame", { Name="Column"..i, Size=UDim2.new(widthScale, -gap * (count - 1) / count, 0, 0), AutomaticSize=Enum.AutomaticSize.Y, BackgroundTransparency=1, LayoutOrder=i, Parent=Row })
+				local list = Create("UIListLayout", { SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,8), Parent=column })
+				columns[i] = { _Parent=column, Index=i, Layout=list }
+			end
+			self._LastColumns = columns
+			self._ParentOverride = nil
+			table.insert(self.Elements, Row)
+			return columns
+		end
+
+		function Tab:UseColumn(column) return self:SetColumn(column) end
+		function Tab:ClearColumnSelection() self._ParentOverride=nil; return self end
+
 		function Tab:CreateToggle(tOpts)
 			local Toggle: { [string]: any } = { Value = tOpts.CurrentValue or false }
 			if tOpts.Flag then Library.Flags[tOpts.Flag] = Toggle.Value end
@@ -1144,7 +1275,7 @@ function Library:CreateWindow(options)
 			local Container = Create("Frame", {
 				Size = UDim2.new(1, 0, 0, 40),
 				BackgroundColor3 = Library.Theme.Element,
-				Parent = Page,
+				Parent = Tab._ParentOverride or Page,
 			})
 			Container:SetAttribute("ZenSearchText", tOpts.Name or "Toggle")
 			Corner(Container, 11); Stroke(Container, Library.Theme.Border, 0.45, 1); CardMotion(Container)
@@ -1268,7 +1399,7 @@ function Library:CreateWindow(options)
 			local Container = Create("Frame", {
 				Size = UDim2.new(1, 0, 0, 56),
 				BackgroundColor3 = Library.Theme.Element,
-				Parent = Page,
+				Parent = Tab._ParentOverride or Page,
 			})
 			Container:SetAttribute("ZenSearchText", sOpts.Name or "Slider")
 			Corner(Container, 11); Stroke(Container, Library.Theme.Border, 0.45, 1); CardMotion(Container)
@@ -1387,7 +1518,7 @@ function Library:CreateWindow(options)
 				Size = UDim2.new(1, 0, 0, 38),
 				BackgroundColor3 = Library.Theme.Element,
 				ClipsDescendants = true,
-				Parent = Page,
+				Parent = Tab._ParentOverride or Page,
 			})
 			Container:SetAttribute("ZenSearchText", dOpts.Name or "Dropdown")
 			Corner(Container, 11); Stroke(Container, Library.Theme.Border, 0.45, 1); CardMotion(Container)
@@ -1545,7 +1676,7 @@ function Library:CreateWindow(options)
 			local Container = Create("Frame", {
 				Size = UDim2.new(1, 0, 0, 40),
 				BackgroundColor3 = Library.Theme.Element,
-				Parent = Page,
+				Parent = Tab._ParentOverride or Page,
 			})
 			Container:SetAttribute("ZenSearchText", kOpts.Name or "Keybind")
 			Corner(Container, 11); Stroke(Container, Library.Theme.Border, 0.45, 1); CardMotion(Container)
@@ -1635,7 +1766,7 @@ function Library:CreateWindow(options)
 			local Container = Create("Frame", {
 				Size = UDim2.new(1, 0, 0, 42),
 				BackgroundColor3 = Library.Theme.Element,
-				Parent = Page,
+				Parent = Tab._ParentOverride or Page,
 			})
 			Container:SetAttribute("ZenSearchText", tOpts.Name or "TextBox")
 			Corner(Container, 11); Stroke(Container, Library.Theme.Border, 0.45, 1); CardMotion(Container)
@@ -1693,7 +1824,7 @@ function Library:CreateWindow(options)
 				FontFace = FontStandard,
 				TextSize = 14,
 				AutoButtonColor = false,
-				Parent = Page,
+				Parent = Tab._ParentOverride or Page,
 			})
 			Btn:SetAttribute("ZenSearchText", bOpts.Name or "Button")
 			Corner(Btn, 11); Stroke(Btn, Library.Theme.Border, 0.45, 1); CardMotion(Btn)
@@ -1723,7 +1854,7 @@ function Library:CreateWindow(options)
 				FontFace = FontStandard,
 				TextSize = 14,
 				TextXAlignment = Enum.TextXAlignment.Left,
-				Parent = Page,
+				Parent = Tab._ParentOverride or Page,
 			})
 			local handle: { [string]: any } = {}
 			function handle:Set(txt) Lbl.Text = tostring(txt) end
@@ -1734,7 +1865,7 @@ function Library:CreateWindow(options)
 			local Para = Create("Frame", {
 				Size = UDim2.new(1, 0, 0, 0),
 				BackgroundColor3 = Library.Theme.Element,
-				Parent = Page,
+				Parent = Tab._ParentOverride or Page,
 			})
 			Para:SetAttribute("ZenSearchText", pOpts.Title or "Paragraph")
 			Corner(Para, 11); Stroke(Para, Library.Theme.Border, 0.45, 1); CardMotion(Para)
@@ -1787,7 +1918,7 @@ function Library:CreateWindow(options)
 				FontFace = FontBold,
 				TextSize = 14,
 				TextXAlignment = Enum.TextXAlignment.Left,
-				Parent = Page,
+				Parent = Tab._ParentOverride or Page,
 			})
 		end
 
@@ -1796,7 +1927,7 @@ function Library:CreateWindow(options)
 				Size = UDim2.new(1, -20, 0, 1),
 				Position = UDim2.new(0, 10, 0, 0),
 				BackgroundColor3 = Library.Theme.Border,
-				Parent = Page,
+				Parent = Tab._ParentOverride or Page,
 			})
 		end
 
@@ -1812,7 +1943,7 @@ function Library:CreateWindow(options)
 				Size = UDim2.new(1, 0, 0, 36),
 				BackgroundColor3 = Library.Theme.Element,
 				ClipsDescendants = true,
-				Parent = Page,
+				Parent = Tab._ParentOverride or Page,
 			})
 			Container:SetAttribute("ZenSearchText", cOpts.Name or "Color Picker")
 			Corner(Container, 11); Stroke(Container, Library.Theme.Border, 0.45, 1); CardMotion(Container)
@@ -1945,6 +2076,25 @@ function Library:CreateWindow(options)
 
 		return Tab
 	end
+
+	local SettingsTab = Window:CreateTab({ Name = "Settings", Icon = "⚙", Badge = "UI" })
+	SettingsTab:CreateSection({ Text = "Appearance" })
+	SettingsTab:CreateDropdown({
+		Name = "UI Scale", CurrentOption = Library.UIScale <= 0.86 and "Compact" or "Normal",
+		Options = { "Compact", "Normal", "Large" },
+		Callback = function(value)
+			local scales = { Compact=0.82, Normal=0.90, Large=1.00 }
+			Window:SetScale(scales[value] or 0.90)
+		end,
+	})
+	SettingsTab:CreateSlider({ Name="Custom Scale", Min=75, Max=115, Default=math.floor(Library.UIScale*100+0.5), Increment=1, Suffix="%", Callback=function(value) Window:SetScale(value/100) end })
+	SettingsTab:CreateColorPicker({ Name="UI Accent", Color=Library.Theme.Accent, Callback=function(color) Library:SetAccentColor(color) end })
+	SettingsTab:CreateButton({ Name="Reset Accent", Callback=function() Library:ResetAccentColor() end })
+	SettingsTab:CreateSection({ Text = "Window" })
+	SettingsTab:CreateSlider({ Name="Window Width", Min=MinWindowWidth, Max=MaxWindowWidth, Default=BaseWindowWidth, Increment=10, Suffix="px", Callback=function(value) Window:SetSize(value, BaseWindowHeight) end })
+	SettingsTab:CreateSlider({ Name="Window Height", Min=MinWindowHeight, Max=MaxWindowHeight, Default=BaseWindowHeight, Increment=10, Suffix="px", Callback=function(value) Window:SetSize(BaseWindowWidth, value) end })
+	SettingsTab:CreateButton({ Name="Reset Window Size", Callback=function() Window:SetSize(960,570) end })
+	SettingsTab:CreateParagraph({ Title="Resizable UI", Content="Drag the corner grip to resize the window. Settings is built into every ZenUI window." })
 
 	return Window
 end
