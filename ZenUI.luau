@@ -2,7 +2,7 @@
 -- Usage:
 --   local Library = (loadstring or require)(...)
 --   local lib = Library.new({ Name = "My Hub", Theme = "Dark" })
---   lib:SetTheme("Black") -- live-switch any built-in theme
+--   lib:SetTheme("Aurora") -- live-switch any built-in theme
 --   print(table.concat(lib:GetThemes(), ", "))
 --   local Window = lib:CreateWindow({ Name = "My Hub", ConfigurationSaving = true })
 --   local Tab = Window:CreateTab({ Name = "Main", Icon = "home" })
@@ -482,6 +482,18 @@ end
 if getgenv().Library and type(getgenv().Library.Destroy) == "function" then
 	pcall(function() getgenv().Library:Destroy() end)
 end
+
+-- Also remove any orphaned ZenUI ScreenGui left behind by an interrupted/older run.
+-- This prevents stray grey/old UI fragments from remaining on the background.
+pcall(function()
+	local guiParent = safe_gethui()
+	for _, child in ipairs(guiParent:GetChildren()) do
+		if child:IsA("ScreenGui") and child.Name == "ZenUI" then
+			child:Destroy()
+		end
+	end
+end)
+
 getgenv().Library = Library
 
 function Library.new(settings)
@@ -661,7 +673,7 @@ function Library:CreateWindow(options)
 		Position = UDim2.new(0.5, 0, 0.5, 0),
 		BackgroundColor3 = Library.Theme.Background,
 		ClipsDescendants = true,
-		BackgroundTransparency = 1,
+		BackgroundTransparency = 0,
 		Parent = Library.ScreenGui,
 	})
 	AddInstance(MainFrame)
@@ -985,12 +997,23 @@ function Library:CreateWindow(options)
 
 	local function RestoreWindow() WindowState.Minimized=false; Sidebar.Visible=true; ContentContainer.Visible=true; SpringTween(MainFrame,{Size=UDim2.new(0,900,0,RestoreHeight)},0.34); end
 	function WindowState:Minimize() if WindowState.Closed or WindowState.Minimized then return end; WindowState.Minimized=true; Sidebar.Visible=false; ContentContainer.Visible=false; SpringTween(MainFrame,{Size=UDim2.new(0,900,0,62)},0.34) end
-	local function CloseWindow() if WindowState.Closed then return end; WindowState.Closed=true; Tween(MainFrame,{BackgroundTransparency=1},0.18); SpringTween(MainScale,{Scale=0.9},0.22); task.delay(0.22,function() if MainFrame.Parent and WindowState.Closed then MainFrame.Visible=false; ShowLauncher() end end) end
+	local function CloseWindow()
+		if WindowState.Closed then return end
+		WindowState.Closed = true
+		Tween(MainFrame, { BackgroundTransparency = 0.35 }, 0.18)
+		SpringTween(MainScale, { Scale = 0.9 }, 0.22)
+		task.delay(0.22, function()
+			if MainFrame.Parent and WindowState.Closed then
+				MainFrame.Visible = false
+				ShowLauncher()
+			end
+		end)
+	end
 	AddConnection(MinimizeButton.MouseButton1Click:Connect(function() if WindowState.Minimized then RestoreWindow() else WindowState:Minimize() end end))
 	AddConnection(CloseButton.MouseButton1Click:Connect(CloseWindow))
 	AddConnection(ReopenButton.MouseEnter:Connect(function() SpringTween(ReopenButton,{Size=UDim2.new(0,64,0,64),BackgroundColor3=Library.Theme.ElementHover},0.16) end))
 	AddConnection(ReopenButton.MouseLeave:Connect(function() Tween(ReopenButton,{Size=UDim2.new(0,58,0,58),BackgroundColor3=Library.Theme.Element},0.14) end))
-	AddConnection(ReopenButton.MouseButton1Click:Connect(function() WindowState.Closed=false; WindowState.Minimized=false; HideLauncher(); MainFrame.Visible=true; MainFrame.BackgroundTransparency=1; MainScale.Scale=0.88; Sidebar.Visible=true; ContentContainer.Visible=true; SpringTween(MainScale,{Scale=1},0.38); Tween(MainFrame,{BackgroundTransparency=0},0.22) end))
+	AddConnection(ReopenButton.MouseButton1Click:Connect(function() WindowState.Closed=false; WindowState.Minimized=false; HideLauncher(); MainFrame.Visible=true; MainFrame.BackgroundTransparency=0; MainScale.Scale=0.88; Sidebar.Visible=true; ContentContainer.Visible=true; SpringTween(MainScale,{Scale=1},0.38) end))
 
 	local WindowVisible=true
 	local function ShowWindow() WindowVisible=true; WindowState.Closed=false; MainFrame.Visible=true; Sidebar.Visible=not WindowState.Minimized; ContentContainer.Visible=not WindowState.Minimized; MainFrame.BackgroundTransparency=0; SpringTween(MainScale,{Scale=1},0.28) end
@@ -1192,7 +1215,7 @@ function Library:CreateWindow(options)
 			local Indicator = Create("Frame", {
 				Size = UDim2.new(0, 18, 0, 18),
 				Position = Toggle.Value and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9),
-				BackgroundColor3 = Toggle.Value and Library.Theme.Background or Library.Theme.TextMuted,
+				BackgroundColor3 = Library.Theme.Text, -- always white in the monochrome theme
 				Parent = SwitchArea,
 			})
 			Corner(Indicator, 9)
@@ -1220,7 +1243,7 @@ function Library:CreateWindow(options)
 				}, 0.22)
 				Tween(Indicator, {
 					Position = val and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9),
-					BackgroundColor3 = val and Library.Theme.Background or Library.Theme.TextMuted,
+					BackgroundColor3 = Library.Theme.Text, -- keep the knob white in both states
 				}, 0.2)
 
 				if not noCallback and tOpts.Callback then
@@ -1231,8 +1254,7 @@ function Library:CreateWindow(options)
 
 			AddConnection(Btn.MouseEnter:Connect(function() Tween(Container, { BackgroundColor3 = Library.Theme.ElementHover }, 0.16) end))
 			AddConnection(Btn.MouseLeave:Connect(function() Tween(Container, { BackgroundColor3 = Library.Theme.Element }, 0.16) end))
-			AddConnection(Btn.MouseButton1Down:Connect(function() Tween(SwitchArea, { Size = UDim2.new(0, 42, 0, 22) }, 0.1) end))
-			AddConnection(Btn.MouseButton1Up:Connect(function() Tween(SwitchArea, { Size = UDim2.new(0, 44, 0, 24) }, 0.12) end))
+			-- Keep the switch track fixed-size so the white knob never appears to collapse on press.
 			AddConnection(Btn.MouseButton1Click:Connect(function()
 				Toggle:Set(not Toggle.Value)
 			end))
