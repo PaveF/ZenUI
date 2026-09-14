@@ -2,7 +2,7 @@
 -- Usage:
 --   local Library = (loadstring or require)(...)
 --   local lib = Library.new({ Name = "My Hub", Theme = "Dark" })
---   lib:SetTheme("Aurora") -- live-switch any built-in theme
+--   lib:SetTheme("Black") -- live-switch any built-in theme
 --   print(table.concat(lib:GetThemes(), ", "))
 --   local Window = lib:CreateWindow({ Name = "My Hub", ConfigurationSaving = true })
 --   local Tab = Window:CreateTab({ Name = "Main", Icon = "home" })
@@ -1169,22 +1169,34 @@ function Library:CreateWindow(options)
 			})
 
 			local SwitchArea = Create("Frame", {
-				Size = UDim2.new(0, 40, 0, 20),
-				Position = UDim2.new(1, -50, 0.5, -10),
-				BackgroundColor3 = Toggle.Value and Library.Theme.Accent or Library.Theme.Border,
+				Size = UDim2.new(0, 44, 0, 24),
+				Position = UDim2.new(1, -54, 0.5, -12),
+				BackgroundColor3 = Toggle.Value and Library.Theme.Text or Library.Theme.SurfaceStrong,
 				Parent = Container,
 			})
-			Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = SwitchArea })
-			local SwitchGlow = Create("Frame", { Size=UDim2.new(1,8,1,8), Position=UDim2.new(0.5,-4,0.5,-4), AnchorPoint=Vector2.new(0.5,0.5), BackgroundColor3=Library.Theme.Accent, BackgroundTransparency=Toggle.Value and 0.88 or 1, BorderSizePixel=0, ZIndex=SwitchArea.ZIndex-1, Parent=SwitchArea })
-			Corner(SwitchGlow,20)
+			Corner(SwitchArea, 12)
+			Stroke(SwitchArea, Library.Theme.Border, 0.2, 1)
 
-			local Indicator = Create("Frame", {
-				Size = UDim2.new(0, 16, 0, 16),
-				Position = Toggle.Value and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8),
+			local SwitchGlow = Create("Frame", {
+				Size = UDim2.new(1, 10, 1, 10),
+				Position = UDim2.new(0.5, -5, 0.5, -5),
+				AnchorPoint = Vector2.new(0.5, 0.5),
 				BackgroundColor3 = Library.Theme.Text,
+				BackgroundTransparency = Toggle.Value and 0.88 or 1,
+				BorderSizePixel = 0,
+				ZIndex = SwitchArea.ZIndex - 1,
 				Parent = SwitchArea,
 			})
-			Create("UICorner", { CornerRadius = UDim.new(1, 0), Parent = Indicator })
+			Corner(SwitchGlow, 16)
+
+			local Indicator = Create("Frame", {
+				Size = UDim2.new(0, 18, 0, 18),
+				Position = Toggle.Value and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9),
+				BackgroundColor3 = Toggle.Value and Library.Theme.Background or Library.Theme.TextMuted,
+				Parent = SwitchArea,
+			})
+			Corner(Indicator, 9)
+			Stroke(Indicator, Toggle.Value and Library.Theme.Border or Library.Theme.Border, 0.5, 1)
 
 			local Btn = Create("TextButton", {
 				Size = UDim2.new(1, 0, 1, 0),
@@ -1200,10 +1212,15 @@ function Library:CreateWindow(options)
 			function Toggle:Set(val, noCallback)
 				self.Value = val
 				if tOpts.Flag then Library.Flags[tOpts.Flag] = val end
-				Tween(SwitchArea, { BackgroundColor3 = val and Library.Theme.Accent or Library.Theme.Border }, 0.2)
-				Tween(SwitchGlow, { BackgroundTransparency = val and 0.86 or 1 }, 0.22)
+				Tween(SwitchArea, {
+					BackgroundColor3 = val and Library.Theme.Text or Library.Theme.SurfaceStrong
+				}, 0.2)
+				Tween(SwitchGlow, {
+					BackgroundTransparency = val and 0.86 or 1
+				}, 0.22)
 				Tween(Indicator, {
-					Position = val and UDim2.new(1, -18, 0.5, -8) or UDim2.new(0, 2, 0.5, -8),
+					Position = val and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9),
+					BackgroundColor3 = val and Library.Theme.Background or Library.Theme.TextMuted,
 				}, 0.2)
 
 				if not noCallback and tOpts.Callback then
@@ -1214,8 +1231,8 @@ function Library:CreateWindow(options)
 
 			AddConnection(Btn.MouseEnter:Connect(function() Tween(Container, { BackgroundColor3 = Library.Theme.ElementHover }, 0.16) end))
 			AddConnection(Btn.MouseLeave:Connect(function() Tween(Container, { BackgroundColor3 = Library.Theme.Element }, 0.16) end))
-			AddConnection(Btn.MouseButton1Down:Connect(function() Tween(SwitchArea, { Size = UDim2.new(0, 38, 0, 18) }, 0.1) end))
-			AddConnection(Btn.MouseButton1Up:Connect(function() Tween(SwitchArea, { Size = UDim2.new(0, 40, 0, 20) }, 0.12) end))
+			AddConnection(Btn.MouseButton1Down:Connect(function() Tween(SwitchArea, { Size = UDim2.new(0, 42, 0, 22) }, 0.1) end))
+			AddConnection(Btn.MouseButton1Up:Connect(function() Tween(SwitchArea, { Size = UDim2.new(0, 44, 0, 24) }, 0.12) end))
 			AddConnection(Btn.MouseButton1Click:Connect(function()
 				Toggle:Set(not Toggle.Value)
 			end))
