@@ -3,7 +3,7 @@
 -- Usage:
 --   local Library = (loadstring or require)(...)
 --   local lib = Library.new({ Name = "My Hub", Theme = "Dark" })
---   lib:SetTheme("Black") -- live-switch any built-in theme
+--   lib:SetTheme("Aurora") -- live-switch any built-in theme
 --   print(table.concat(lib:GetThemes(), ", "))
 --   local Window = lib:CreateWindow({ Name = "My Hub", ConfigurationSaving = true })
 --   local Tab = Window:CreateTab({ Name = "Main", Icon = "home" })
@@ -1188,7 +1188,7 @@ function Library:CreateWindow(options)
 				Position = UDim2.new(0.5, -5, 0.5, -5),
 				AnchorPoint = Vector2.new(0.5, 0.5),
 				BackgroundColor3 = Library.Theme.Text,
-				BackgroundTransparency = Toggle.Value and 0.88 or 1,
+				BackgroundTransparency = 1,
 				BorderSizePixel = 0,
 				ZIndex = SwitchArea.ZIndex - 1,
 				Parent = SwitchArea,
