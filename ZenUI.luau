@@ -3,7 +3,7 @@
 -- Usage:
 --   local Library = (loadstring or require)(...)
 --   local lib = Library.new({ Name = "My Hub", Theme = "Dark" })
---   lib:SetTheme("Aurora") -- live-switch any built-in theme
+--   lib:SetTheme("Black") -- live-switch any built-in theme
 --   print(table.concat(lib:GetThemes(), ", "))
 --   local Window = lib:CreateWindow({ Name = "My Hub", ConfigurationSaving = true })
 --   local Tab = Window:CreateTab({ Name = "Main", Icon = "home" })
@@ -804,9 +804,9 @@ function Library:CreateWindow(options)
 		AddConnection(b.MouseLeave:Connect(function() Tween(b, {Size = UDim2.new(0,34,0,34), Position = UDim2.new(1,xOffset,0.5,-17), BackgroundColor3 = Library.Theme.Element}, 0.14) end))
 		return b
 	end
-	local ThemeButton = MakeHeaderButton("Theme", "◌", -116)
-	MinimizeButton = MakeHeaderButton("Minimize", "—", -76)
-	CloseButton = MakeHeaderButton("Close", "×", -16)
+	local ThemeButton = MakeHeaderButton("Theme", "◌", -146)
+	MinimizeButton = MakeHeaderButton("Minimize", "—", -101)
+	CloseButton = MakeHeaderButton("Close", "×", -56)
 
 	CycleTheme = function()
 		local names = Library:GetThemes()
@@ -1177,7 +1177,7 @@ function Library:CreateWindow(options)
 			local SwitchArea = Create("Frame", {
 				Size = UDim2.new(0, 44, 0, 24),
 				Position = UDim2.new(1, -54, 0.5, -12),
-				BackgroundColor3 = Toggle.Value and Library.Theme.Text or Library.Theme.SurfaceStrong,
+				BackgroundColor3 = Toggle.Value and Library.Theme.Accent or Library.Theme.SurfaceStrong,
 				Parent = Container,
 			})
 			Corner(SwitchArea, 12)
@@ -1198,11 +1198,11 @@ function Library:CreateWindow(options)
 			local Indicator = Create("Frame", {
 				Size = UDim2.new(0, 18, 0, 18),
 				Position = Toggle.Value and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9),
-				BackgroundColor3 = Library.Theme.Text, -- always white in the monochrome theme
+				BackgroundColor3 = Toggle.Value and Library.Theme.Background or Library.Theme.Text,
 				Parent = SwitchArea,
 			})
 			Corner(Indicator, 9)
-			Stroke(Indicator, Toggle.Value and Library.Theme.Border or Library.Theme.Border, 0.5, 1)
+			Stroke(Indicator, Library.Theme.Border, 0.5, 1)
 
 			local Btn = Create("TextButton", {
 				Size = UDim2.new(1, 0, 1, 0),
@@ -1219,14 +1219,14 @@ function Library:CreateWindow(options)
 				self.Value = val
 				if tOpts.Flag then Library.Flags[tOpts.Flag] = val end
 				Tween(SwitchArea, {
-					BackgroundColor3 = val and Library.Theme.Text or Library.Theme.SurfaceStrong
+					BackgroundColor3 = val and Library.Theme.Accent or Library.Theme.SurfaceStrong
 				}, 0.2)
 				Tween(SwitchGlow, {
 					BackgroundTransparency = val and 0.86 or 1
 				}, 0.22)
 				Tween(Indicator, {
 					Position = val and UDim2.new(1, -21, 0.5, -9) or UDim2.new(0, 3, 0.5, -9),
-					BackgroundColor3 = Library.Theme.Text, -- keep the knob white in both states
+					BackgroundColor3 = val and Library.Theme.Background or Library.Theme.Text,
 				}, 0.2)
 
 				if not noCallback and tOpts.Callback then
