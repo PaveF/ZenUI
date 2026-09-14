@@ -1,4 +1,5 @@
 --!nonstrict
+-- ZenUI - Modern monochrome Luau UI library
 -- Usage:
 --   local Library = (loadstring or require)(...)
 --   local lib = Library.new({ Name = "My Hub", Theme = "Dark" })
@@ -668,7 +669,7 @@ function Library:CreateWindow(options)
 
 	local MainFrame = Create("Frame", {
 		Name = "MainWindow",
-		Size = UDim2.new(0, 900, 0, 570),
+		Size = UDim2.new(0, 960, 0, 570),
 		AnchorPoint = Vector2.new(0.5, 0.5),
 		Position = UDim2.new(0.5, 0, 0.5, 0),
 		BackgroundColor3 = Library.Theme.Background,
@@ -694,44 +695,19 @@ function Library:CreateWindow(options)
 	pcall(function() WindowGradient:SetAttribute("ZenGradient", true) end)
 
 	local MainScale = Create("UIScale", { Scale = 0.90, Parent = MainFrame })
-	local MainShadow = Create("Frame", {
-		Name = "Shadow",
-		Size = UDim2.new(1, 42, 1, 42),
-		Position = UDim2.new(0.5, -21, 0.5, -21),
-		BackgroundColor3 = Library.Theme.Glow,
-		BackgroundTransparency = 0.965,
-		BorderSizePixel = 0,
-		ZIndex = 0,
-		Parent = MainFrame,
-	})
-	Corner(MainShadow, 30)
-
-	local AmbientA = GlowDot(MainFrame, 220, UDim2.new(1, 0, 0, 86), Library.Theme.Accent, 0.965)
-	local AmbientB = GlowDot(MainFrame, 180, UDim2.new(0, 5, 1, -30), Library.Theme.Glow, 0.968)
-	local AmbientC = GlowDot(MainFrame, 110, UDim2.new(0.48, 0, 0.2, 0), Library.Theme.Accent, 0.978)
-	AmbientA.ZIndex, AmbientB.ZIndex, AmbientC.ZIndex = 0, 0, 0
-
-	task.spawn(function()
-		while MainFrame.Parent do
-			Tween(AmbientA, { Position = UDim2.new(1, -35, 0, 64) }, 3.4)
-			Tween(AmbientB, { Position = UDim2.new(0, 34, 1, -58) }, 3.1)
-			Tween(AmbientC, { Position = UDim2.new(0.52, 0, 0.28, 0) }, 2.8)
-			task.wait(3.4)
-			Tween(AmbientA, { Position = UDim2.new(1, 18, 0, 105) }, 3.4)
-			Tween(AmbientB, { Position = UDim2.new(0, 0, 1, -18) }, 3.1)
-			Tween(AmbientC, { Position = UDim2.new(0.42, 0, 0.13, 0) }, 2.8)
-			task.wait(3.4)
-		end
-	end)
+	-- No internal shadow/ambient blocks: keep the UI background completely clean.
 
 	local Header = Create("Frame", {
 		Name = "Header",
-		Size = UDim2.new(1, 0, 0, 62),
+		Size = UDim2.new(1, 0, 0, 64),
 		BackgroundColor3 = Library.Theme.Surface or Library.Theme.Element,
-		BackgroundTransparency = 0.10,
+		BackgroundTransparency = 0.04,
 		Active = true,
+		ClipsDescendants = true,
 		Parent = MainFrame,
 	})
+	-- Keep the top of the window visibly rounded even though the header spans the full width.
+	Corner(Header, 18)
 	Create("UIGradient", {
 		Rotation = 0,
 		Color = ColorSequence.new({
@@ -812,18 +788,25 @@ function Library:CreateWindow(options)
 
 	local function MakeHeaderButton(name, text, xOffset)
 		local b = Create("TextButton", {
-			Name = name, Size = UDim2.new(0, 32, 0, 32), Position = UDim2.new(1, xOffset, 0.5, -16),
-			BackgroundColor3 = Library.Theme.Element, Text = text, TextColor3 = Library.Theme.TextMuted,
-			FontFace = FontBold, TextSize = 14, AutoButtonColor = false, Parent = Header,
+			Name = name, Size = UDim2.new(0, 34, 0, 34), Position = UDim2.new(1, xOffset, 0.5, -17),
+			BackgroundColor3 = Library.Theme.Element, Text = "", TextColor3 = Library.Theme.TextMuted,
+			AutoButtonColor = false, Parent = Header,
 		})
 		Corner(b, 10); Stroke(b, Library.Theme.Border, 0.42, 1)
-		AddConnection(b.MouseEnter:Connect(function() SpringTween(b, {Size = UDim2.new(0,35,0,35), Position = UDim2.new(1,xOffset-1.5,0.5,-17.5), BackgroundColor3 = Library.Theme.ElementHover}, 0.16) end))
-		AddConnection(b.MouseLeave:Connect(function() Tween(b, {Size = UDim2.new(0,32,0,32), Position = UDim2.new(1,xOffset,0.5,-16), BackgroundColor3 = Library.Theme.Element}, 0.14) end))
+		if name == "Close" then
+			local x1 = Create("Frame", { Size=UDim2.new(0,14,0,2), Position=UDim2.new(0.5,-7,0.5,-1), Rotation=45, BackgroundColor3=Library.Theme.TextMuted, BorderSizePixel=0, Parent=b })
+			local x2 = Create("Frame", { Size=UDim2.new(0,14,0,2), Position=UDim2.new(0.5,-7,0.5,-1), Rotation=-45, BackgroundColor3=Library.Theme.TextMuted, BorderSizePixel=0, Parent=b })
+			Corner(x1, 2); Corner(x2, 2)
+		else
+			Create("TextLabel", { Size=UDim2.new(1,0,1,0), BackgroundTransparency=1, Text=text, TextColor3=Library.Theme.TextMuted, FontFace=FontBold, TextSize=14, Parent=b })
+		end
+		AddConnection(b.MouseEnter:Connect(function() SpringTween(b, {Size = UDim2.new(0,36,0,36), Position = UDim2.new(1,xOffset-1,0.5,-18), BackgroundColor3 = Library.Theme.ElementHover}, 0.16) end))
+		AddConnection(b.MouseLeave:Connect(function() Tween(b, {Size = UDim2.new(0,34,0,34), Position = UDim2.new(1,xOffset,0.5,-17), BackgroundColor3 = Library.Theme.Element}, 0.14) end))
 		return b
 	end
-	local ThemeButton = MakeHeaderButton("Theme", "◌", -110)
-	MinimizeButton = MakeHeaderButton("Minimize", "—", -72)
-	CloseButton = MakeHeaderButton("Close", "×", -34)
+	local ThemeButton = MakeHeaderButton("Theme", "◌", -116)
+	MinimizeButton = MakeHeaderButton("Minimize", "—", -76)
+	CloseButton = MakeHeaderButton("Close", "×", -36)
 
 	CycleTheme = function()
 		local names = Library:GetThemes()
@@ -995,8 +978,8 @@ function Library:CreateWindow(options)
 	local function ShowLauncher() ReopenButton.Visible=true; SpringTween(ReopenScale,{Scale=1},0.35) end
 	local function HideLauncher() SpringTween(ReopenScale,{Scale=0.7},0.18); task.delay(0.18,function() if ReopenButton.Parent then ReopenButton.Visible=false end end) end
 
-	local function RestoreWindow() WindowState.Minimized=false; Sidebar.Visible=true; ContentContainer.Visible=true; SpringTween(MainFrame,{Size=UDim2.new(0,900,0,RestoreHeight)},0.34); end
-	function WindowState:Minimize() if WindowState.Closed or WindowState.Minimized then return end; WindowState.Minimized=true; Sidebar.Visible=false; ContentContainer.Visible=false; SpringTween(MainFrame,{Size=UDim2.new(0,900,0,62)},0.34) end
+	local function RestoreWindow() WindowState.Minimized=false; Sidebar.Visible=true; ContentContainer.Visible=true; SpringTween(MainFrame,{Size=UDim2.new(0,960,0,RestoreHeight)},0.34); end
+	function WindowState:Minimize() if WindowState.Closed or WindowState.Minimized then return end; WindowState.Minimized=true; Sidebar.Visible=false; ContentContainer.Visible=false; SpringTween(MainFrame,{Size=UDim2.new(0,960,0,62)},0.34) end
 	local function CloseWindow()
 		if WindowState.Closed then return end
 		WindowState.Closed = true
