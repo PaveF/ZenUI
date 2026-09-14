@@ -806,7 +806,7 @@ function Library:CreateWindow(options)
 	end
 	local ThemeButton = MakeHeaderButton("Theme", "◌", -116)
 	MinimizeButton = MakeHeaderButton("Minimize", "—", -76)
-	CloseButton = MakeHeaderButton("Close", "×", -36)
+	CloseButton = MakeHeaderButton("Close", "×", -16)
 
 	CycleTheme = function()
 		local names = Library:GetThemes()
