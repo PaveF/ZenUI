@@ -56,7 +56,7 @@ The library is intentionally kept as a **single `.luau` file** so it is easy to 
 ## Quick start
 
 ```lua
-local Library = loadstring(game:HttpGet("YOUR_RAW_GITHUB_URL/zenui.luau"))()
+local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/PaveF/ZenUI/refs/heads/main/ZenUI.luau"))()
 
 local Lib = Library.new({
     Name = "My Hub",
@@ -95,7 +95,7 @@ Main:CreateButton({
 })
 ```
 
-> Replace `YOUR_RAW_GITHUB_URL/zenui.luau` with the **raw** URL to your GitHub file.
+
 
 ---
 
@@ -107,7 +107,7 @@ Example format:
 
 ```lua
 local Library = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/USERNAME/REPOSITORY/refs/heads/main/zenui.luau"
+    "https://raw.githubusercontent.com/PaveF/ZenUI/refs/heads/main/ZenUI.luau"
 ))()
 ```
 
@@ -116,8 +116,8 @@ You can also pin to a tag or commit if you want a stable version rather than alw
 ### Recommended repository layout
 
 ```text
-your-repository/
-├── zenui.luau
+PaveF/ZenUI
+├── ZenUI.luau
 └── README.md
 ```
 
@@ -129,7 +129,7 @@ Keeping the library as a single file makes remote loading simple and avoids depe
 
 ```lua
 local Library = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/USERNAME/REPOSITORY/refs/heads/main/zenui.luau"
+    "https://raw.githubusercontent.com/PaveF/ZenUI/refs/heads/main/ZenUI.luau"
 ))()
 
 local Lib = Library.new({
@@ -1039,7 +1039,7 @@ Make sure you are loading the **raw file contents**, not the normal GitHub HTML 
 Correct style:
 
 ```text
-https://raw.githubusercontent.com/USERNAME/REPOSITORY/refs/heads/main/zenui.luau
+https://raw.githubusercontent.com/PaveF/ZenUI/refs/heads/main/ZenUI.luau
 ```
 
 Not:
