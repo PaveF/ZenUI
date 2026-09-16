@@ -3,9 +3,11 @@
   "author": "PaveF",
   "repository": "https://github.com/PaveF/ZenUI",
   "license": "ZenUI Source-Available License v1.0",
-  "official_source_blob": "0a40065a46a4723ae144fa72b92c8cfbe6c9fc4d",
   "official_source_file": "ZenUI.luau",
-  "official_version": "2.2",
-  "build_id": "ZENUI-APEX-2.2",
-  "core_commit": "2bce1372ed8a5f813f2fd4deb42994b0c7c8a15e"
+  "official_version": "2.3",
+  "build_id": "ZENUI-APEX-2.3",
+  "provenance_id": "ZENUI-PROV-2.3-2bce1372-78778774",
+  "core_commit": "2bce1372ed8a5f813f2fd4deb42994b0c7c8a15e",
+  "extension_commit": "78778774df0031c720e2152e5163dfec3595f606",
+  "entrypoint_note": "The source blob SHA is intentionally kept as an external audit field because embedding a file's own final blob SHA would be self-referential."
 }
