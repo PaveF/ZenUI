@@ -10,16 +10,16 @@ presented as official ZenUI builds or use ZenUI branding to imply endorsement.
 ]=]
 local HttpService=game:GetService("HttpService")
 local ENV=(getgenv and getgenv()) or _G
-local CORE_COMMIT="c057751d2bcdce18210e4542c70c2390ece63e11"
+local CORE_COMMIT="cfe224355bba96ac99dd5fc775ce474510dba307"
 local EXTENSION_COMMIT="78778774df0031c720e2152e5163dfec3595f606"
 local CORE="https://raw.githubusercontent.com/PaveF/ZenUI/"..CORE_COMMIT.."/ZenUI.ApexVisuals.luau"
 local EXT="https://raw.githubusercontent.com/PaveF/ZenUI/"..EXTENSION_COMMIT.."/ZenUI.Extensions.luau"
 local SOURCE_ROOT="https://github.com/PaveF/ZenUI"
 local MANIFEST="https://raw.githubusercontent.com/PaveF/ZenUI/main/OFFICIAL_BUILD.json"
 local OFFICIAL_AUTHOR="PaveF"
-local OFFICIAL_VERSION="2.3.1"
-local BUILD_ID="ZENUI-APEX-2.3.1"
-local PROVENANCE_ID="ZENUI-PROV-2.3.1-c057751d-78778774"
+local OFFICIAL_VERSION="2.4.0"
+local BUILD_ID="ZENUI-APEX-2.4.0"
+local PROVENANCE_ID="ZENUI-PROV-2.4.0-cfe22435-78778774"
 
 local function loadRemote(url,name)
  local src=game:HttpGet(url)
@@ -52,18 +52,9 @@ Library.Metadata={
  }
 }
 
-function Library:GetBuildInfo()
- return table.clone(self.Metadata)
-end
-
-function Library:GetOfficialRepository()
- return SOURCE_ROOT
-end
-
-function Library:IsOfficialBuild()
- return self.Metadata and self.Metadata.Official==true and self.Metadata.Author==OFFICIAL_AUTHOR and self.Metadata.Repository==SOURCE_ROOT and self.Metadata.License=="ZenUI Source-Available License v1.0" and self.Metadata.ProvenanceId==PROVENANCE_ID
-end
-
+function Library:GetBuildInfo() return table.clone(self.Metadata) end
+function Library:GetOfficialRepository() return SOURCE_ROOT end
+function Library:IsOfficialBuild() return self.Metadata and self.Metadata.Official==true and self.Metadata.Author==OFFICIAL_AUTHOR and self.Metadata.Repository==SOURCE_ROOT and self.Metadata.License=="ZenUI Source-Available License v1.0" and self.Metadata.ProvenanceId==PROVENANCE_ID end
 function Library:FetchOfficialManifest()
  local ok,raw=pcall(function() return game:HttpGet(MANIFEST) end)
  if not ok or type(raw)~="string" then return nil,"Unable to fetch official provenance manifest." end
@@ -71,7 +62,6 @@ function Library:FetchOfficialManifest()
  if not decodedOk or type(data)~="table" then return nil,"Official provenance manifest is invalid." end
  return data
 end
-
 function Library:VerifyOfficialBuild(fetchRemote)
  local result={status="unknown",official=false,repository=self.Metadata.Repository,build=self.Metadata.Build,version=self.Metadata.Version,provenance_id=self.Metadata.ProvenanceId,core_commit=CORE_COMMIT,extension_commit=EXTENSION_COMMIT,manifest_url=MANIFEST,reasons={}}
  if self.Metadata.Repository~=SOURCE_ROOT then result.status="unofficial"; table.insert(result.reasons,"Repository is not canonical."); return result end
@@ -81,25 +71,13 @@ function Library:VerifyOfficialBuild(fetchRemote)
  if not manifest then table.insert(result.reasons,err); return result end
  result.manifest=manifest
  local matches=manifest.project==self.Metadata.Name and manifest.author==self.Metadata.Author and manifest.repository==self.Metadata.Repository and manifest.license==self.Metadata.License and manifest.official_source_file==self.Metadata.SourceFile and manifest.official_version==self.Metadata.Version and manifest.build_id==self.Metadata.Build and manifest.provenance_id==PROVENANCE_ID and manifest.core_commit==CORE_COMMIT and manifest.extension_commit==EXTENSION_COMMIT
- if matches then
-  result.status="official"
-  result.official=true
-  result.reasons={"Local provenance matches the canonical published manifest."}
- else
-  result.status="modified-or-unofficial"
-  result.reasons={"Local provenance does not match the canonical published manifest.","Treat this distribution as modified or unofficial until manually verified."}
- end
+ if matches then result.status="official"; result.official=true; result.reasons={"Local provenance matches the canonical published manifest."} else result.status="modified-or-unofficial"; result.reasons={"Local provenance does not match the canonical published manifest.","Treat this distribution as modified or unofficial until manually verified."} end
  return result
 end
-
-function Library:GetAuthenticityStatus(fetchRemote)
- local result=self:VerifyOfficialBuild(fetchRemote)
- return result.status,result
-end
+function Library:GetAuthenticityStatus(fetchRemote) local result=self:VerifyOfficialBuild(fetchRemote); return result.status,result end
 
 local ok,err=pcall(function()loadRemote(EXT,"ZenUI.Extensions")end)
-Library.Apex={Version=OFFICIAL_VERSION,ExtensionURL=EXT,ExtensionCommit=EXTENSION_COMMIT,ExtensionLoaded=ok,ExtensionError=ok and nil or tostring(err),Features={"PremiumGlass","AmbientMotion","CommandCenter","StatusBar","ContextMenu","StatGrid","Segmented","Stepper","Progress","InfoCard","ActionGroup","QuickToggle","AIManifest","Provenance","AuthenticityVerification"}}
-
+Library.Apex={Version=OFFICIAL_VERSION,ExtensionURL=EXT,ExtensionCommit=EXTENSION_COMMIT,ExtensionLoaded=ok,ExtensionError=ok and nil or tostring(err),Features={"CleanGlass","StableMotion","CommandCenter","StatusBar","ContextMenu","StatGrid","Segmented","Stepper","Progress","InfoCard","ActionGroup","QuickToggle","AIManifest","Provenance","AuthenticityVerification"}}
 function Library:LoadApexExtensions(force)
  if self.Apex.ExtensionLoaded and not force then return true end
  local success,reason=pcall(function()loadRemote(EXT,"ZenUI.Extensions")end)
@@ -107,5 +85,4 @@ function Library:LoadApexExtensions(force)
  self.Apex.ExtensionError=success and nil or tostring(reason)
  return success,reason
 end
-
 return Library
