@@ -10,16 +10,16 @@ presented as official ZenUI builds or use ZenUI branding to imply endorsement.
 ]=]
 local HttpService=game:GetService("HttpService")
 local ENV=(getgenv and getgenv()) or _G
-local CORE_COMMIT="2bce1372ed8a5f813f2fd4deb42994b0c7c8a15e"
+local CORE_COMMIT="c057751d2bcdce18210e4542c70c2390ece63e11"
 local EXTENSION_COMMIT="78778774df0031c720e2152e5163dfec3595f606"
-local CORE="https://raw.githubusercontent.com/PaveF/ZenUI/"..CORE_COMMIT.."/ZenUI.luau"
+local CORE="https://raw.githubusercontent.com/PaveF/ZenUI/"..CORE_COMMIT.."/ZenUI.ApexVisuals.luau"
 local EXT="https://raw.githubusercontent.com/PaveF/ZenUI/"..EXTENSION_COMMIT.."/ZenUI.Extensions.luau"
 local SOURCE_ROOT="https://github.com/PaveF/ZenUI"
 local MANIFEST="https://raw.githubusercontent.com/PaveF/ZenUI/main/OFFICIAL_BUILD.json"
 local OFFICIAL_AUTHOR="PaveF"
-local OFFICIAL_VERSION="2.3"
-local BUILD_ID="ZENUI-APEX-2.3"
-local PROVENANCE_ID="ZENUI-PROV-2.3-2bce1372-78778774"
+local OFFICIAL_VERSION="2.3.1"
+local BUILD_ID="ZENUI-APEX-2.3.1"
+local PROVENANCE_ID="ZENUI-PROV-2.3.1-c057751d-78778774"
 
 local function loadRemote(url,name)
  local src=game:HttpGet(url)
