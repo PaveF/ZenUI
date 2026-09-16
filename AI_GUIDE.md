@@ -1,68 +1,86 @@
 # ZenUI AI Guide
 
-ZenUI is intentionally designed to be easy for both humans and code-generating AI systems to compose.
+ZenUI is designed so humans and code-generating AI systems can discover, compose, and mutate interfaces without depending on private implementation details.
 
 ## Load
 
 ```lua
-local Library = loadstring(game:HttpGet("https://raw.githubusercontent.com/PaveF/ZenUI/refs/heads/main/ZenUI.luau"))()
+local Library = loadstring(game:HttpGet(
+    "https://raw.githubusercontent.com/PaveF/ZenUI/refs/heads/main/ZenUI.luau"
+))()
 ```
 
-## AI discovery contract
+The main entry point automatically loads the stable ZenUI visual core and the Apex extension layer.
 
-The runtime exposes:
+## Discovery contract
 
 ```lua
 local manifest = Library:AIManifest()
-local json = Library:AIManifest(true)
-local matches = Library:DescribeAI("number")
+local json = Library:AIManifestJSON()
+local matches = Library:Describe("progress")
 ```
 
-`Library.AI` contains a deterministic, plain-data capability map. It describes the control kind, constructor name, mutability, and conventions that generated UI code should follow.
+The manifest is deterministic plain Lua data. A generator can inspect it before writing UI code instead of guessing from private instances.
 
-## Core controls
+## Control selection
 
-- `CreateToggle` — boolean state
-- `CreateSlider` — bounded number
-- `CreateDropdown` — enum or multi-select
-- `CreateKeybind` — input binding
-- `CreateTextBox` — string input
-- `CreateButton` — action
-- `CreateColorPicker` — color state
-- `CreateLabel` / `CreateParagraph` / `CreateSection` / `CreateLine` — presentation
-- `CreateColumns` — 2–4 column layouts
+| Intent | Use |
+|---|---|
+| Boolean | `CreateToggle` |
+| Small exclusive enum | `CreateSegmented` |
+| Large enum / set | `CreateDropdown` |
+| Bounded integer | `CreateStepper` |
+| Continuous number | `CreateSlider` |
+| Free text | `CreateTextBox` |
+| Color | `CreateColorPicker` |
+| Action | `CreateButton` |
+| Related actions | `CreateActionGroup` |
+| Progress / telemetry | `CreateProgress` |
+| Connection / health | `CreateStatusBar` |
+| Explanation | `CreateInfoCard` / `CreateParagraph` |
+| KPI / telemetry cards | `CreateStatGrid` |
+| Searchable global actions | `CreateCommandCenter` |
+| Secondary actions | `CreateContextMenu` |
 
-## Apex controls
+## Generation conventions
 
-- `CreateSegmented({ Options, CurrentOption, Callback })` — compact mutually-exclusive mode switcher.
-- `CreateStepper({ Min, Max, Step, Default, Callback })` — bounded numeric state with step semantics.
-- `CreateProgress({ Max, Value, Callback })` — live progress / telemetry display.
-- `CreateInfoCard({ Title, Content })` — information card.
-- `CreateActionGroup({ Actions = { {Name, Callback}, ... } })` — grouped actions.
-- `CreateQuickToggle(name, callback, default)` — concise toggle constructor for generated code.
+1. Use stable, descriptive `Name` fields.
+2. Use `Flag` for persistent configuration-backed state.
+3. Prefer semantic constructors over manually-created GUI instances.
+4. Pass the new value as the first callback argument for value controls.
+5. Prefer public `Get()` / `Set()` handles over internal instance access.
+6. Use `CreateSegmented` for a small mutually-exclusive enum.
+7. Use `CreateStepper` when exact numeric increments matter.
+8. Use `CreateProgress` and `CreateStatusBar` for live state instead of repeated notifications.
+9. Use `CreateCommandCenter` for large action collections.
+10. Use `CreateActionGroup` for related actions that belong together.
 
-Every advanced control returns a small handle where practical, with `Get()` and/or `Set()` methods so AI-generated code can mutate state without reaching into implementation details.
-
-## Recommended generation pattern
+## Example
 
 ```lua
-local Main = Window:CreateTab({Name = "Main", Icon = "◆"})
-
-Main:CreateInfoCard({
-    Title = "Ready",
-    Content = "Choose a mode, tune the value, then run the action.",
+local Main = Window:CreateTab({
+    Name = "Main",
+    Icon = "home",
 })
 
-local Enabled = Main:CreateToggle({
-    Name = "Enabled",
-    CurrentValue = true,
-    Flag = "Enabled",
+Main:CreateInfoCard({
+    Title = "Control center",
+    Content = "Choose a mode, tune the value, then start the task.",
 })
 
 local Mode = Main:CreateSegmented({
     Name = "Mode",
-    Options = {"Safe", "Balanced", "Fast"},
+    Options = { "Safe", "Balanced", "Fast" },
     CurrentOption = "Balanced",
+})
+
+local Amount = Main:CreateStepper({
+    Name = "Amount",
+    Min = 0,
+    Max = 100,
+    Step = 5,
+    Default = 25,
+    Flag = "Amount",
 })
 
 local Progress = Main:CreateProgress({
@@ -70,19 +88,25 @@ local Progress = Main:CreateProgress({
     Max = 100,
     Value = 0,
 })
+
+Progress:Set(60)
 ```
 
-## Design rules for AI-authored UIs
+## Handles
 
-1. Give controls descriptive, stable `Name` values. ZenUI's search can use those names.
-2. Use `Flag` for persistent state and configuration-backed values.
-3. Prefer the smallest control that matches the data type.
-4. Use `CreateSegmented` for a small exclusive enum and `CreateDropdown` for larger option sets.
-5. Keep callbacks side-effect focused and accept the new value as the first parameter for value controls.
-6. Use `CreateInfoCard` before complex control groups so users understand what a setting does.
-7. Use `CreateActionGroup` for related actions instead of creating a long list of unrelated buttons.
-8. Treat the returned control handle as the public API; avoid depending on internal Instances.
+Use the handle returned by a constructor:
 
-## Stable extension philosophy
+```lua
+local Enabled = Main:CreateToggle({
+    Name = "Enabled",
+    CurrentValue = false,
+    Flag = "Enabled",
+})
 
-ZenUI Apex is a composition layer over the original ZenUI core. Existing core controls remain available, while advanced controls and the AI contract are intentionally implemented outside the core rendering engine. This keeps the public API approachable and makes generated UI code resilient to internal visual changes.
+Enabled:Set(true)
+print(Enabled:Get())
+```
+
+## Extension philosophy
+
+The Apex layer composes on top of the stable ZenUI core. Advanced controls are separate from the core renderer so the visual system can evolve without forcing generated code to depend on internal object names.
