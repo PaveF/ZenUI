@@ -19,7 +19,7 @@ local MANIFEST="https://raw.githubusercontent.com/PaveF/ZenUI/main/OFFICIAL_BUIL
 local OFFICIAL_AUTHOR="PaveF"
 local OFFICIAL_VERSION="2.3"
 local BUILD_ID="ZENUI-APEX-2.3"
-local SOURCE_BLOB="UNPUBLISHED"
+local PROVENANCE_ID="ZENUI-PROV-2.3-2bce1372-78778774"
 
 local function loadRemote(url,name)
  local src=game:HttpGet(url)
@@ -40,7 +40,7 @@ Library.Metadata={
  License="ZenUI Source-Available License v1.0",
  Official=true,
  SourceFile="ZenUI.luau",
- SourceBlob=SOURCE_BLOB,
+ ProvenanceId=PROVENANCE_ID,
  ManifestURL=MANIFEST,
  Provenance={
   EntryPoint="ZenUI.luau",
@@ -61,7 +61,7 @@ function Library:GetOfficialRepository()
 end
 
 function Library:IsOfficialBuild()
- return self.Metadata and self.Metadata.Official==true and self.Metadata.Author==OFFICIAL_AUTHOR and self.Metadata.Repository==SOURCE_ROOT and self.Metadata.License=="ZenUI Source-Available License v1.0" and self.Metadata.SourceBlob~="UNPUBLISHED"
+ return self.Metadata and self.Metadata.Official==true and self.Metadata.Author==OFFICIAL_AUTHOR and self.Metadata.Repository==SOURCE_ROOT and self.Metadata.License=="ZenUI Source-Available License v1.0" and self.Metadata.ProvenanceId==PROVENANCE_ID
 end
 
 function Library:FetchOfficialManifest()
@@ -73,46 +73,21 @@ function Library:FetchOfficialManifest()
 end
 
 function Library:VerifyOfficialBuild(fetchRemote)
- local result={
-  status="unknown",
-  official=false,
-  repository=self.Metadata.Repository,
-  build=self.Metadata.Build,
-  version=self.Metadata.Version,
-  source_blob=self.Metadata.SourceBlob,
-  core_commit=CORE_COMMIT,
-  extension_commit=EXTENSION_COMMIT,
-  manifest_url=MANIFEST,
-  reasons={},
- }
+ local result={status="unknown",official=false,repository=self.Metadata.Repository,build=self.Metadata.Build,version=self.Metadata.Version,provenance_id=self.Metadata.ProvenanceId,core_commit=CORE_COMMIT,extension_commit=EXTENSION_COMMIT,manifest_url=MANIFEST,reasons={}}
  if self.Metadata.Repository~=SOURCE_ROOT then result.status="unofficial"; table.insert(result.reasons,"Repository is not canonical."); return result end
- if self.Metadata.SourceBlob=="UNPUBLISHED" then
-  result.status="unverified"
-  table.insert(result.reasons,"This entry point has not yet been assigned its published source fingerprint.")
-  if fetchRemote==false then return result end
- end
- if fetchRemote~=false then
-  local manifest,err=self:FetchOfficialManifest()
-  if not manifest then table.insert(result.reasons,err); return result end
-  result.manifest=manifest
-  local matches=manifest.project==self.Metadata.Name
-   and manifest.author==self.Metadata.Author
-   and manifest.repository==self.Metadata.Repository
-   and manifest.license==self.Metadata.License
-   and manifest.official_source_file==self.Metadata.SourceFile
-   and manifest.official_version==self.Metadata.Version
-   and manifest.build_id==self.Metadata.Build
-   and manifest.core_commit==CORE_COMMIT
-   and manifest.extension_commit==EXTENSION_COMMIT
-   and manifest.official_source_blob==self.Metadata.SourceBlob
-  if matches and self.Metadata.SourceBlob~="UNPUBLISHED" then
-   result.status="official"
-   result.official=true
-   result.reasons={"Local provenance matches the canonical published manifest."}
-  else
-   result.status="modified-or-unofficial"
-   result.reasons={"Local provenance does not match the canonical published manifest.","Treat this distribution as modified or unofficial until manually verified."}
-  end
+ if self.Metadata.ProvenanceId~=PROVENANCE_ID then result.status="unverified"; table.insert(result.reasons,"Provenance identifier is not the official ZenUI identifier."); return result end
+ if fetchRemote==false then result.status="claimed-official"; return result end
+ local manifest,err=self:FetchOfficialManifest()
+ if not manifest then table.insert(result.reasons,err); return result end
+ result.manifest=manifest
+ local matches=manifest.project==self.Metadata.Name and manifest.author==self.Metadata.Author and manifest.repository==self.Metadata.Repository and manifest.license==self.Metadata.License and manifest.official_source_file==self.Metadata.SourceFile and manifest.official_version==self.Metadata.Version and manifest.build_id==self.Metadata.Build and manifest.provenance_id==PROVENANCE_ID and manifest.core_commit==CORE_COMMIT and manifest.extension_commit==EXTENSION_COMMIT
+ if matches then
+  result.status="official"
+  result.official=true
+  result.reasons={"Local provenance matches the canonical published manifest."}
+ else
+  result.status="modified-or-unofficial"
+  result.reasons={"Local provenance does not match the canonical published manifest.","Treat this distribution as modified or unofficial until manually verified."}
  end
  return result
 end
@@ -123,14 +98,7 @@ function Library:GetAuthenticityStatus(fetchRemote)
 end
 
 local ok,err=pcall(function()loadRemote(EXT,"ZenUI.Extensions")end)
-Library.Apex={
- Version=OFFICIAL_VERSION,
- ExtensionURL=EXT,
- ExtensionCommit=EXTENSION_COMMIT,
- ExtensionLoaded=ok,
- ExtensionError=ok and nil or tostring(err),
- Features={"PremiumGlass","AmbientMotion","CommandCenter","StatusBar","ContextMenu","StatGrid","Segmented","Stepper","Progress","InfoCard","ActionGroup","QuickToggle","AIManifest","Provenance","AuthenticityVerification"}
-}
+Library.Apex={Version=OFFICIAL_VERSION,ExtensionURL=EXT,ExtensionCommit=EXTENSION_COMMIT,ExtensionLoaded=ok,ExtensionError=ok and nil or tostring(err),Features={"PremiumGlass","AmbientMotion","CommandCenter","StatusBar","ContextMenu","StatGrid","Segmented","Stepper","Progress","InfoCard","ActionGroup","QuickToggle","AIManifest","Provenance","AuthenticityVerification"}}
 
 function Library:LoadApexExtensions(force)
  if self.Apex.ExtensionLoaded and not force then return true end
