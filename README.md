@@ -191,6 +191,31 @@ local matches = Library:Describe("progress")
 6. Use command surfaces for large action collections.
 7. Use status/progress controls for live state instead of flooding the UI with notifications.
 
+## Authenticity and unofficial builds
+
+ZenUI is distributed through the canonical repository:
+
+`https://github.com/PaveF/ZenUI`
+
+The official entry point exposes build provenance APIs:
+
+```lua
+local info = Library:GetBuildInfo()
+local status, details = Library:GetAuthenticityStatus()
+local officialRepository = Library:GetOfficialRepository()
+```
+
+The authenticity result uses these statuses:
+
+- `official` — local provenance matches the canonical published manifest.
+- `modified-or-unofficial` — provenance disagrees with the canonical manifest.
+- `unofficial` — the distribution is not identifying the canonical ZenUI repository.
+- `unverified` / `unknown` — the manifest could not be confirmed.
+
+The API is intentionally a **provenance signal**, not a claim of unforgeable client-side security. A determined person who controls the distributed source can modify or impersonate local metadata. Users should verify suspicious distributions against the canonical repository and `OFFICIAL_BUILD.json`.
+
+See [`AUTHENTICITY.md`](AUTHENTICITY.md) for the full verification policy and [`LICENSE`](LICENSE) for the source/branding terms.
+
 ## Core control reference
 
 ### Toggle
@@ -351,7 +376,11 @@ PaveF/ZenUI
 ├── ZenUI.luau
 ├── ZenUI.Extensions.luau
 ├── README.md
-└── AI_GUIDE.md
+├── AI_GUIDE.md
+├── LICENSE
+├── NOTICE.md
+├── AUTHENTICITY.md
+└── OFFICIAL_BUILD.json
 ```
 
 `ZenUI.luau` is the recommended entry point. It loads the stable visual core and Apex extension layer automatically.
@@ -365,6 +394,7 @@ ZenUI Apex is intentionally split into layers:
 1. **Stable core** — original ZenUI rendering, controls, themes, search, configuration and window lifecycle.
 2. **Premium visual layer** — animated depth, ambient lighting, sheen and interaction polish.
 3. **Apex extension layer** — higher-level semantic controls and AI-facing discovery.
-4. **Documentation layer** — human API docs plus `AI_GUIDE.md` for deterministic generation conventions.
+4. **Provenance layer** — official build identity and authenticity metadata.
+5. **Documentation layer** — human API docs plus `AI_GUIDE.md` for deterministic generation conventions.
 
 This keeps the public API semantic and lets the visual implementation evolve without forcing AI-generated code to depend on internal instance names.
