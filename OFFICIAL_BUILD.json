@@ -7,7 +7,7 @@
   "official_version": "3.0.0",
   "build_id": "ZENUI-APEX-3.0.0",
   "provenance_id": "ZENUI-PROV-3.0.0",
-  "content_commit": "d63fe3bbfdfb2f5195118906e036838dff3f02d9",
+  "content_commit": "34da272e30405caccb7547281cee197b8c54d8f5",
   "files": [
     "ZenUI.luau",
     "ZenUI.Core.luau",
