@@ -248,6 +248,10 @@ local function CreateIcon(parent: Instance, iconName: string?, color: Color3?)
 		IconBar(icon,UDim2.new(0,9,0,2),UDim2.new(0,3,0,11),-40,iconColor)
 		IconBar(icon,UDim2.new(0,9,0,2),UDim2.new(0,14,0,16),-40,iconColor)
 		IconBar(icon,UDim2.new(0,8,0,2),UDim2.new(0,9,0,5),90,iconColor)
+	elseif name == "up" or name == "expand" or name == "restore" then
+		IconBar(icon, UDim2.new(0, 10, 0, 2), UDim2.new(0, 8, 0, 15), 0, iconColor)
+		IconBar(icon, UDim2.new(0, 10, 0, 2), UDim2.new(0, 8, 0, 11), 0, iconColor)
+		IconBar(icon, UDim2.new(0, 14, 0, 2), UDim2.new(0, 6, 0, 7), 0, iconColor)
 	else
 		
 		for y=7,17,5 do IconBar(icon, UDim2.new(0, 14, 0, 2), UDim2.new(0, 6, 0, y), 0, iconColor) end
@@ -591,6 +595,13 @@ end
 
 function Library:Destroy()
 	Log("Destroying previous UI instance...")
+	if type(self.OnDestroy) == "function" then
+		pcall(self.OnDestroy)
+	end
+	self.OnDestroy = nil
+	if type(self.DestroyExtensions) == "function" then
+		pcall(function() self:DestroyExtensions() end)
+	end
 	for _, conn in ipairs(self.Connections) do
 		if conn and typeof(conn) == "RBXScriptConnection" then
 			pcall(function() conn:Disconnect() end)
@@ -609,6 +620,10 @@ function Library:Destroy()
 	self.ScreenGui = nil
 	self.MainFrame = nil
 	self.ListeningKeybind = false
+	pcall(function()
+		local env = (getgenv and getgenv()) or _G
+		env.Library = nil
+	end)
 	Log("destroyed")
 end
 
@@ -1128,18 +1143,24 @@ function Library:CreateWindow(options)
 
 	local WindowState = { Minimized=false, Closed=false }
 	local RestoreHeight = BaseWindowHeight
-	local ReopenButton = Create("TextButton", { Name="ReopenButton", Size=UDim2.new(0,64,0,64), AnchorPoint=Vector2.new(1,1), Position=UDim2.new(1,-24,1,-24), BackgroundColor3=Library.Theme.Element, Text="Z", TextColor3=Library.Theme.Text, FontFace=FontBold, TextSize=24, AutoButtonColor=false, Visible=false, ZIndex=200, Parent=Library.ScreenGui })
+local ReopenButton = Create("TextButton", { Name="ReopenButton", Size=UDim2.new(0,64,0,64), AnchorPoint=Vector2.new(1,1), Position=UDim2.new(1,-24,1,-24), BackgroundColor3=Library.Theme.Element, Text="", TextColor3=Library.Theme.Text, AutoButtonColor=false, Visible=false, ZIndex=200, Parent=Library.ScreenGui })
 	AddInstance(ReopenButton); Corner(ReopenButton,20); Stroke(ReopenButton,Library.Theme.Border,0.12,1.3)
 	local ReopenGlow = Create("Frame", { Size=UDim2.new(0,84,0,84), Position=UDim2.new(1,-24,1,-24), AnchorPoint=Vector2.new(1,1), BackgroundColor3=Library.Theme.Accent, BackgroundTransparency=0.85, BorderSizePixel=0, ZIndex=ReopenButton.ZIndex-1, Parent=Library.ScreenGui })
 	Corner(ReopenGlow,26)
 	local ReopenScale=Create("UIScale",{Scale=0.7,Parent=ReopenButton})
+	local ReopenIcon=CreateIcon(ReopenButton, "up", Library.Theme.Accent)
+	ReopenIcon.Size=UDim2.new(0,30,0,30); ReopenIcon.Position=UDim2.new(0.5,-15,0.5,-15)
 	local function ShowLauncher() ReopenButton.Visible=true; ReopenGlow.Visible=true; SpringTween(ReopenScale,{Scale=1},0.35) end
 	local function HideLauncher() SpringTween(ReopenScale,{Scale=0.7},0.18); task.delay(0.18,function() if ReopenButton.Parent then ReopenButton.Visible=false; ReopenGlow.Visible=false end end) end
 
 	local function RestoreWindow()
 		WindowState.Minimized=false
+		HideLauncher()
+		MainFrame.Visible=true
 		Sidebar.Visible=true
 		ContentContainer.Visible=true
+		MainFrame.BackgroundTransparency=0
+		SpringTween(MainScale,{Scale=Library.UIScale},0.30)
 		SpringTween(MainFrame,{Size=UDim2.new(0,BaseWindowWidth,0,RestoreHeight)},0.34)
 	end
 	function WindowState:Minimize()
@@ -1147,7 +1168,13 @@ function Library:CreateWindow(options)
 		WindowState.Minimized=true
 		Sidebar.Visible=false
 		ContentContainer.Visible=false
-		SpringTween(MainFrame,{Size=UDim2.new(0,BaseWindowWidth,0,78)},0.34)
+		SpringTween(MainScale,{Scale=0.82},0.16)
+		task.delay(0.16,function()
+			if MainFrame.Parent and WindowState.Minimized then
+				MainFrame.Visible=false
+				ShowLauncher()
+			end
+		end)
 	end
 	local function CloseWindow()
 		if WindowState.Closed then return end
@@ -1156,13 +1183,20 @@ function Library:CreateWindow(options)
 		SpringTween(MainScale, { Scale = 0.9 }, 0.22)
 		task.delay(0.22, function()
 			if MainFrame.Parent and WindowState.Closed then
-				MainFrame.Visible = false
+				MainFrame.Visible=false
 				ShowLauncher()
 			end
 		end)
 	end
 	AddConnection(MinimizeButton.MouseButton1Click:Connect(function() if WindowState.Minimized then RestoreWindow() else WindowState:Minimize() end end))
-	AddConnection(CloseButton.MouseButton1Click:Connect(CloseWindow))
+	local DestroyOnClose = options.DestroyOnClose ~= false
+	AddConnection(CloseButton.MouseButton1Click:Connect(function()
+		if DestroyOnClose then
+			Window:Destroy()
+		else
+			CloseWindow()
+		end
+	end))
 	AddConnection(ReopenButton.MouseEnter:Connect(function() SpringTween(ReopenButton,{Size=UDim2.new(0,70,0,70),BackgroundColor3=Library.Theme.ElementHover},0.16) end))
 	AddConnection(ReopenButton.MouseLeave:Connect(function() Tween(ReopenButton,{Size=UDim2.new(0,64,0,64),BackgroundColor3=Library.Theme.Element},0.14) end))
 	AddConnection(ReopenButton.MouseButton1Click:Connect(function() WindowState.Closed=false; WindowState.Minimized=false; HideLauncher(); MainFrame.Visible=true; MainFrame.BackgroundTransparency=0; MainFrame.Size=UDim2.new(0,BaseWindowWidth,0,BaseWindowHeight); MainScale.Scale=0.88; Sidebar.Visible=true; ContentContainer.Visible=true; SpringTween(MainScale,{Scale=Library.UIScale},0.38) end))

@@ -26,7 +26,15 @@ local Window = Lib:CreateWindow({
 	ConfigurationSaving = true,
 	ConfigFolder = "NovaHub",
 	Keybind = Enum.KeyCode.Insert,
+	DestroyOnClose = true, -- X fully tears down the UI and the demo
 })
+
+-- Cleanup everything the demo owns when the UI is destroyed (X button).
+-- This is what makes the X button kill "the UI and other things".
+-- DemoAlive and StatLoop are assigned later; nothing reads them until
+-- Library.OnDestroy fires, by which point they exist.
+local DemoAlive = true
+local StatLoop: thread? = nil
 
 -- ============================================================ globals
 local Players = game:GetService("Players")
@@ -66,23 +74,38 @@ local RunService = game:GetService("RunService")
 
 -- Frame counter: one cheap per-frame drain, separate from the 1 Hz stat loop.
 local FrameCount = 0
-RunService.RenderStepped:Connect(function()
+local FpsConnection = RunService.RenderStepped:Connect(function()
 	FrameCount = FrameCount + 1
 end)
 
-task.spawn(function()
-	while true do
+-- Single consolidated cleanup hook: X (DestroyOnClose) reaches this through
+-- Library:Destroy(), which cancels the stat loop and the render counter.
+Library.OnDestroy = function()
+	DemoAlive = false
+	if FpsConnection then pcall(function() FpsConnection:Disconnect() end) end
+	if StatLoop then
+		task.cancel(StatLoop)
+		StatLoop = nil
+	end
+end
+
+StatLoop = task.spawn(function()
+	while DemoAlive do
 		local ping = "—"
 		pcall(function()
 			ping = tostring(math.floor(0.9 * Players:GetNetworkPing() * 1000 + 0.5)) .. "ms"
 		end)
 		-- Rebuilding the grid once per second is fine; per frame it would not be.
-		StatGrid:SetValues({
-			{ Name = "Players", Value = tostring(#Players:GetPlayers()) },
-			{ Name = "Ping", Value = ping },
-			{ Name = "FPS", Value = tostring(FrameCount) },
-			{ Name = "Uptime", Value = tostring(math.floor(tick() - StartTime)) .. "s" },
-		})
+		if StatGrid and StatGrid.SetValues then
+			pcall(function()
+				StatGrid:SetValues({
+					{ Name = "Players", Value = tostring(#Players:GetPlayers()) },
+					{ Name = "Ping", Value = ping },
+					{ Name = "FPS", Value = tostring(FrameCount) },
+					{ Name = "Uptime", Value = tostring(math.floor(tick() - StartTime)) .. "s" },
+				})
+			end)
+		end
 		FrameCount = 0
 		task.wait(1)
 	end
