@@ -1,5 +1,5 @@
 --[=[
-ZenUI Apex v3 Core — glass/neon edition
+ZenUI Apex v3 Core â€” glass/neon edition
 Copyright (c) 2026 PaveF. All rights reserved.
 
 A polished Roblox/Luau UI library: constant-driven layout, glass panels
@@ -57,27 +57,36 @@ end
 -- ------------------------------------------------------------------ layout
 -- Every hard placement derives from these constants. If a pixel is wrong,
 -- it is wrong HERE, once, not scattered across a dozen copy-pasted offsets.
+-- This build has no sidebar: tabs live in a horizontal rail under the top
+-- bar, content fills the whole window, and the player card is a floating
+-- chip over the bottom-right corner.
 local LAYOUT = {
-	WindowRadius = 20,
-	WindowShadowPad = 36,
+	WindowRadius = 24,
+	WindowShadowPad = 40,
 	WindowShadowDrop = 8,
 
-	HeaderHeight = 76,
-	HeaderTitleSize = 18,
-	HeaderSubtitleSize = 12,
+	TopBarHeight = 56,
+	BrandTileSize = 36,
+	BrandIconSize = 26,
+	TopBarTitleSize = 17,
 
-	SidebarWidth = 236,
-	SidebarCollapsedWidth = 78,
-	NavHeight = 50,
-	NavRadius = 14,
-	NavIconSize = 28,
+	TabRailHeight = 50,
+	TabPadX = 14,
+	TabGap = 6,
+	TabWidth = 128,
+	TabHeight = 38,
+	TabRadius = 12,
 
-	ContentTopHeight = 54,
-	ContentTopRadius = 14,
-	PageTopPadding = 16,
+	ContentStripHeight = 48,
+	ContentStripRadius = 12,
+	PageTopPadding = 14,
 
 	SearchWidth = 300,
-	SearchHeight = 40,
+	SearchHeight = 38,
+
+	PlayerChipW = 210,
+	PlayerChipH = 54,
+	PlayerChipRadius = 14,
 
 	CardRadius = 12,
 	CardHeight = 46,
@@ -846,6 +855,8 @@ local function AddAccentRail(parent: GuiObject, height)
 end
 
 -- ------------------------------------------------------------------ window
+-- v3 chrome: no sidebar. Top bar with brand + search + window buttons,
+-- horizontal tab rail under it, full-width pages, floating player chip.
 function Library:CreateWindow(options)
 	options = options or {}
 	if Library.MainFrame then
@@ -863,10 +874,11 @@ function Library:CreateWindow(options)
 	Library.ConfigFolder = options.ConfigFolder or "UI_Configs"
 	local ToggleKeybind = options.Keybind or Enum.KeyCode.Insert
 
-	local BaseWindowWidth = math.clamp(tonumber(options.Width) or 1100, 900, 1600)
-	local BaseWindowHeight = math.clamp(tonumber(options.Height) or 640, 560, 980)
-	local MinWindowWidth, MaxWindowWidth = 900, 1600
-	local MinWindowHeight, MaxWindowHeight = 560, 980
+	local BaseWindowWidth = math.clamp(tonumber(options.Width) or 1160, 900, 1700)
+	local BaseWindowHeight = math.clamp(tonumber(options.Height) or 660, 560, 1000)
+	local MinWindowWidth, MaxWindowWidth = 900, 1700
+	local MinWindowHeight, MaxWindowHeight = 560, 1000
+	local ThemeMini: any = nil
 
 	-- ------------------------------------------------------------ frame
 	local MainFrame = Create("Frame", {
@@ -890,7 +902,7 @@ function Library:CreateWindow(options)
 		Color = ColorSequence.new({
 			ColorSequenceKeypoint.new(0, Library.Theme.SurfaceStrong),
 			ColorSequenceKeypoint.new(0.5, Library.Theme.Background),
-			ColorSequenceKeypoint.new(1, Library.Theme.Sidebar),
+			ColorSequenceKeypoint.new(1, Library.Theme.Surface),
 		}),
 		Parent = MainFrame,
 	})
@@ -899,26 +911,26 @@ function Library:CreateWindow(options)
 	local MainScale = Create("UIScale", { Scale = Library.UIScale, Parent = MainFrame })
 	WindowShadow(MainFrame, Library.ScreenGui, MainScale)
 
-	-- ------------------------------------------------------------ header
-	local Header = Create("Frame", {
-		Name = "Header",
-		Size = UDim2.new(1, 0, 0, LAYOUT.HeaderHeight),
+	-- ------------------------------------------------------------ top bar
+	local TopBar = Create("Frame", {
+		Name = "TopBar",
+		Size = UDim2.new(1, 0, 0, LAYOUT.TopBarHeight),
 		BackgroundTransparency = 1,
 		Active = true,
 		ClipsDescendants = true,
 		Parent = MainFrame,
 	})
-	local HeaderGlowHeader = Create("Frame", { Size = UDim2.new(1, 0, 0, LAYOUT.HeaderHeight), BackgroundColor3 = Library.Theme.SurfaceStrong, BackgroundTransparency = 0.35, BorderSizePixel = 0, Parent = Header })
+	local TopBarBg = Create("Frame", { Size = UDim2.new(1, 0, 1, 0), BackgroundColor3 = Library.Theme.SurfaceStrong, BackgroundTransparency = 0.25, BorderSizePixel = 0, Parent = TopBar })
 	Create("UIGradient", {
 		Rotation = 0,
 		Color = ColorSequence.new({
 			ColorSequenceKeypoint.new(0, Library.Theme.SurfaceStrong),
 			ColorSequenceKeypoint.new(1, Library.Theme.Surface),
 		}),
-		Transparency = NumberSequence.new(0.45),
-		Parent = HeaderGlowHeader,
+		Transparency = NumberSequence.new(0.4),
+		Parent = TopBarBg,
 	})
-	Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1, Transparency = 0.8, Parent = HeaderGlowHeader })
+	Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1, Transparency = 0.8, Parent = TopBarBg })
 
 	-- drag
 	local dragInput, dragging, dragStart, startPos
@@ -928,42 +940,42 @@ function Library:CreateWindow(options)
 		return pos.X >= p.X and pos.X <= p.X + z.X and pos.Y >= p.Y and pos.Y <= p.Y + z.Y
 	end
 
-	-- brand block: icon tile + name + subtitle
+	-- brand tile + title
 	local BrandTile = Create("Frame", {
-		Size = UDim2.new(0, 42, 0, 42),
-		Position = UDim2.new(0, 16, 0.5, -21),
+		Size = UDim2.new(0, LAYOUT.BrandTileSize, 0, LAYOUT.BrandTileSize),
+		Position = UDim2.new(0, 16, 0.5, -LAYOUT.BrandTileSize / 2),
 		BackgroundColor3 = Library.Theme.Element,
-		BackgroundTransparency = 0.2,
+		BackgroundTransparency = 0.15,
 		BorderSizePixel = 0,
-		Parent = Header,
+		Parent = TopBar,
 	})
-	Corner(BrandTile, 12)
-	Create("UIStroke", { Color = Library.Theme.Accent, Thickness = 1.4, Transparency = 0.55, Parent = BrandTile })
+	Corner(BrandTile, 10)
+	Create("UIStroke", { Color = Library.Theme.Accent, Thickness = 1.4, Transparency = 0.5, Parent = BrandTile })
 	local BrandIcon = CreateIcon(BrandTile, options.Icon or "home", Library.Theme.Accent)
-	BrandIcon.Size = UDim2.new(0, 24, 0, 24)
-	BrandIcon.Position = UDim2.new(0.5, -12, 0.5, -12)
+	BrandIcon.Size = UDim2.new(0, LAYOUT.BrandIconSize, 0, LAYOUT.BrandIconSize)
+	BrandIcon.Position = UDim2.new(0.5, -LAYOUT.BrandIconSize / 2, 0.5, -LAYOUT.BrandIconSize / 2)
 
-	local Title = Create("TextLabel", {
-		Size = UDim2.new(0, 260, 0, 24),
-		Position = UDim2.new(0, 68, 0, 12),
+	local TopBarTitle = Create("TextLabel", {
+		Size = UDim2.new(0, 240, 0, 22),
+		Position = UDim2.new(0, 60, 0, 8),
 		BackgroundTransparency = 1,
 		Text = options.Name or "ZenUI",
 		TextColor3 = Library.Theme.Text,
 		FontFace = FontBold,
-		TextSize = LAYOUT.HeaderTitleSize,
+		TextSize = LAYOUT.TopBarTitleSize,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = Header,
+		Parent = TopBar,
 	})
-	local Subtitle = Create("TextLabel", {
-		Size = UDim2.new(0, 260, 0, 17),
-		Position = UDim2.new(0, 68, 0, 38),
+	local TopBarTag = Create("TextLabel", {
+		Size = UDim2.new(0, 240, 0, 14),
+		Position = UDim2.new(0, 60, 0, 32),
 		BackgroundTransparency = 1,
-		Text = "Roblox command control",
+		Text = "ZenUI · rail edition",
 		TextColor3 = Library.Theme.TextMuted,
 		FontFace = FontStandard,
-		TextSize = LAYOUT.HeaderSubtitleSize,
+		TextSize = 10,
 		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = Header,
+		Parent = TopBar,
 	})
 
 	-- search
@@ -972,7 +984,7 @@ function Library:CreateWindow(options)
 		Size = UDim2.new(0, LAYOUT.SearchWidth, 0, LAYOUT.SearchHeight),
 		Position = UDim2.new(0.5, -LAYOUT.SearchWidth / 2, 0.5, -LAYOUT.SearchHeight / 2),
 		BackgroundColor3 = Library.Theme.Element,
-		BackgroundTransparency = 0.15,
+		BackgroundTransparency = 0.12,
 		Text = "",
 		PlaceholderText = "Search tabs...   Ctrl + K",
 		TextColor3 = Library.Theme.Text,
@@ -980,74 +992,68 @@ function Library:CreateWindow(options)
 		ClearTextOnFocus = false,
 		FontFace = FontStandard,
 		TextSize = 13,
-		Parent = Header,
+		Parent = TopBar,
 	})
 	Corner(SearchBox, 11)
 	Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1, Transparency = 0.6, Parent = SearchBox })
 	local SearchGlow = Create("Frame", { Size = UDim2.new(1, 0, 0, 2), Position = UDim2.new(0, 0, 1, -2), BackgroundColor3 = Library.Theme.Accent, BackgroundTransparency = 0.85, BorderSizePixel = 0, Parent = SearchBox })
 	Corner(SearchGlow, 2)
 
-	-- ambient shadow breathing under the header
-	local HeaderGlow = Create("Frame", { Name = "ZenHeaderGlow", Size = UDim2.new(1, -48, 0, 2), Position = UDim2.new(0, 24, 1, -2), BackgroundColor3 = Library.Theme.Accent, BackgroundTransparency = 0.25, BorderSizePixel = 0, Parent = Header })
+	local TopBarGlow = Create("Frame", { Name = "ZenTopBarGlow", Size = UDim2.new(1, -48, 0, 2), Position = UDim2.new(0, 24, 1, -2), BackgroundColor3 = Library.Theme.Accent, BackgroundTransparency = 0.25, BorderSizePixel = 0, Parent = TopBar })
 	task.spawn(function()
-		while HeaderGlow.Parent do
-			Tween(HeaderGlow, { BackgroundTransparency = 0.55 }, 1.1)
+		while TopBarGlow.Parent do
+			Tween(TopBarGlow, { BackgroundTransparency = 0.55 }, 1.1)
 			task.wait(1.1)
-			Tween(HeaderGlow, { BackgroundTransparency = 0.2 }, 1.1)
+			Tween(TopBarGlow, { BackgroundTransparency = 0.2 }, 1.1)
 			task.wait(1.1)
 		end
 	end)
 
 	-- header buttons
 	local MinimizeButton, CloseButton
-	local function MakeHeaderButton(name, text, xOffset)
+	local function MakeTopButton(name, text, xOffset)
 		local b = Create("TextButton", {
-			Name = name, Size = UDim2.new(0, 38, 0, 38), Position = UDim2.new(1, xOffset, 0.5, -19),
+			Name = name, Size = UDim2.new(0, 36, 0, 36), Position = UDim2.new(1, xOffset, 0.5, -18),
 			BackgroundColor3 = Library.Theme.Element, Text = "", TextColor3 = Library.Theme.TextMuted,
-			AutoButtonColor = false, Parent = Header,
+			AutoButtonColor = false, Parent = TopBar,
 		})
-		Corner(b, 11)
+		Corner(b, 10)
 		Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1, Transparency = 0.55, Parent = b })
 		if name == "Close" then
-			local x1 = Create("Frame", { Size = UDim2.new(0, 15, 0, 2.2), Position = UDim2.new(0.5, -7.5, 0.5, -1.1), Rotation = 45, BackgroundColor3 = Library.Theme.TextMuted, BorderSizePixel = 0, Parent = b })
-			local x2 = Create("Frame", { Size = UDim2.new(0, 15, 0, 2.2), Position = UDim2.new(0.5, -7.5, 0.5, -1.1), Rotation = -45, BackgroundColor3 = Library.Theme.TextMuted, BorderSizePixel = 0, Parent = b })
+			local x1 = Create("Frame", { Size = UDim2.new(0, 14, 0, 2), Position = UDim2.new(0.5, -7, 0.5, -1), Rotation = 45, BackgroundColor3 = Library.Theme.TextMuted, BorderSizePixel = 0, Parent = b })
+			local x2 = Create("Frame", { Size = UDim2.new(0, 14, 0, 2), Position = UDim2.new(0.5, -7, 0.5, -1), Rotation = -45, BackgroundColor3 = Library.Theme.TextMuted, BorderSizePixel = 0, Parent = b })
 			Corner(x1, 2); Corner(x2, 2)
 		else
-			Create("TextLabel", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Library.Theme.TextMuted, FontFace = FontBold, TextSize = 16, Parent = b })
+			Create("TextLabel", { Size = UDim2.new(1, 0, 1, 0), BackgroundTransparency = 1, Text = text, TextColor3 = Library.Theme.TextMuted, FontFace = FontBold, TextSize = 15, Parent = b })
 		end
 		AddConnection(b.MouseEnter:Connect(function()
-			SpringTween(b, { Size = UDim2.new(0, 40, 0, 40), Position = UDim2.new(1, xOffset - 1, 0.5, -20), BackgroundColor3 = Library.Theme.ElementHover }, 0.16)
+			SpringTween(b, { Size = UDim2.new(0, 38, 0, 38), Position = UDim2.new(1, xOffset - 1, 0.5, -19), BackgroundColor3 = Library.Theme.ElementHover }, 0.16)
 		end))
 		AddConnection(b.MouseLeave:Connect(function()
-			Tween(b, { Size = UDim2.new(0, 38, 0, 38), Position = UDim2.new(1, xOffset, 0.5, -19), BackgroundColor3 = Library.Theme.Element }, 0.14)
+			Tween(b, { Size = UDim2.new(0, 36, 0, 36), Position = UDim2.new(1, xOffset, 0.5, -18), BackgroundColor3 = Library.Theme.Element }, 0.14)
 		end))
 		return b
 	end
 
-	local ThemeButton = MakeHeaderButton("Theme", "◌", -166)
-	MinimizeButton = MakeHeaderButton("Minimize", "—", -117)
-	CloseButton = MakeHeaderButton("Close", "×", -68)
+	local ThemeButton = MakeTopButton("Theme", "◌", -158)
+	MinimizeButton = MakeTopButton("Minimize", "—", -111)
+	CloseButton = MakeTopButton("Close", "×", -64)
 
 	local function CycleTheme()
 		local names = Library:GetThemes()
 		local idx = table.find(names, Library.ThemeName) or 1
 		Library:SetTheme(names[(idx % #names) + 1])
+		if ThemeMini then ThemeMini.Text = Library.ThemeName end
 	end
 	AddConnection(ThemeButton.MouseButton1Click:Connect(CycleTheme))
-	AddConnection(SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
-		local query = string.lower(SearchBox.Text or "")
-		for _, entry in ipairs(Window.Tabs) do
-			entry.Button.Visible = query == "" or string.find(string.lower(entry.Name), query, 1, true) ~= nil
-		end
-	end))
 
-	AddConnection(Header.InputBegan:Connect(function(input)
+	AddConnection(TopBar.InputBegan:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then
 			if IsOverGui(MinimizeButton, input.Position) or IsOverGui(CloseButton, input.Position) or IsOverGui(SearchBox, input.Position) then return end
 			dragging, dragStart, startPos = true, input.Position, MainFrame.Position
 		end
 	end))
-	AddConnection(Header.InputChanged:Connect(function(input)
+	AddConnection(TopBar.InputChanged:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseMovement or input.UserInputType == Enum.UserInputType.Touch then dragInput = input end
 	end))
 	AddConnection(UserInputService.InputChanged:Connect(function(input)
@@ -1058,238 +1064,147 @@ function Library:CreateWindow(options)
 	end))
 	AddConnection(UserInputService.InputEnded:Connect(function(input)
 		if input.UserInputType == Enum.UserInputType.MouseButton1 or input.UserInputType == Enum.UserInputType.Touch then dragging = false end
-	end))-- ------------------------------------------------------------ sidebar
-	local SidebarWidth = LAYOUT.SidebarWidth
-	local Sidebar = Create("Frame", {
-		Name = "Sidebar",
-		Size = UDim2.new(0, SidebarWidth, 1, -LAYOUT.HeaderHeight),
-		Position = UDim2.new(0, 0, 0, LAYOUT.HeaderHeight),
-		BackgroundColor3 = Library.Theme.Sidebar,
-		BackgroundTransparency = 0.15,
-		BorderSizePixel = 0,
-		Parent = MainFrame,
-	})
-	local SidebarGlass = Create("UIGradient", {
-		Rotation = 90,
-		Color = ColorSequence.new({
-			ColorSequenceKeypoint.new(0, Library.Theme.Sidebar),
-			ColorSequenceKeypoint.new(1, darker(Library.Theme.Sidebar, 0.12)),
-		}),
-		Transparency = NumberSequence.new(0.25),
-		Parent = Sidebar,
-	})
-	Corner(Sidebar, 12)
-
-	local NavLabel = Create("TextLabel", {
-		Size = UDim2.new(1, -32, 0, 18),
-		Position = UDim2.new(0, 16, 0, 10),
-		BackgroundTransparency = 1,
-		Text = "NAVIGATION",
-		TextColor3 = Library.Theme.TextMuted,
-		FontFace = FontBold,
-		TextSize = 10,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = Sidebar,
-	})
-
-	local TabContainer = Create("ScrollingFrame", {
-		Name = "TabContainer",
-		Size = UDim2.new(1, -12, 1, -LAYOUT.TabBarBottomPad),
-		Position = UDim2.new(0, 6, 0, 32),
-		BackgroundTransparency = 1,
-		ScrollBarThickness = 0,
-		ScrollingDirection = Enum.ScrollingDirection.Y,
-		AutomaticCanvasSize = Enum.AutomaticSize.Y,
-		CanvasSize = UDim2.new(0, 0, 0, 0),
-		Parent = Sidebar,
-	})
-	local TabListLayout = Create("UIListLayout", {
-		SortOrder = Enum.SortOrder.LayoutOrder,
-		Padding = UDim.new(0, 6),
-		HorizontalAlignment = Enum.HorizontalAlignment.Center,
-		Parent = TabContainer,
-	})
-	AddConnection(TabListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
-		TabContainer.CanvasSize = UDim2.new(0, 0, 0, TabListLayout.AbsoluteContentSize.Y + 10)
 	end))
 
-	local CollapseButton = Create("TextButton", {
-		Name = "CollapseButton",
-		Size = UDim2.new(0, 30, 0, 30),
-		Position = UDim2.new(1, -40, 0, 6),
-		BackgroundColor3 = Library.Theme.Element,
-		Text = "‹",
-		TextColor3 = Library.Theme.TextMuted,
-		FontFace = FontBold,
-		TextSize = 18,
-		AutoButtonColor = false,
-		Parent = Sidebar,
-	})
-	Corner(CollapseButton, 9)
-	Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1, Transparency = 0.55, Parent = CollapseButton })
-	local Collapsed = false
-
-	-- player footer
-	local SidebarFooter = Create("Frame", {
-		Name = "PlayerProfile",
-		Size = UDim2.new(1, -24, 0, 64),
-		Position = UDim2.new(0, 12, 1, -76),
-		BackgroundColor3 = Library.Theme.SurfaceStrong,
-		BackgroundTransparency = 0.2,
-		BorderSizePixel = 0,
-		Parent = Sidebar,
-	})
-	Corner(SidebarFooter, 12)
-	Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1, Transparency = 0.6, Parent = SidebarFooter })
-	local ProfileAccent = Create("Frame", {
-		Size = UDim2.new(0, 3, 0, 32),
-		Position = UDim2.new(0, 5, 0.5, -16),
-		BackgroundColor3 = Library.Theme.Accent,
-		BorderSizePixel = 0,
-		Parent = SidebarFooter,
-	})
-	Corner(ProfileAccent, 2)
-
-	local ProfileAvatar = Create("ImageLabel", {
-		Name = "Avatar",
-		Size = UDim2.new(0, 42, 0, 42),
-		Position = UDim2.new(0, 14, 0.5, -21),
-		BackgroundColor3 = Library.Theme.Element,
-		BackgroundTransparency = 0,
-		Image = "",
-		ScaleType = Enum.ScaleType.Crop,
-		Parent = SidebarFooter,
-	})
-	Corner(ProfileAvatar, 11)
-	Create("UIStroke", { Color = Library.Theme.Accent, Thickness = 1.6, Transparency = 0.4, Parent = ProfileAvatar })
-
-	local PlayerName = Create("TextLabel", {
-		Name = "DisplayName",
-		Size = UDim2.new(1, -66, 0, 20),
-		Position = UDim2.new(0, 64, 0, 10),
-		BackgroundTransparency = 1,
-		Text = "Player",
-		TextColor3 = Library.Theme.Text,
-		FontFace = FontBold,
-		TextSize = 13,
-		TextTruncate = Enum.TextTruncate.AtEnd,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = SidebarFooter,
-	})
-	local Username = Create("TextLabel", {
-		Name = "Username",
-		Size = UDim2.new(1, -66, 0, 17),
-		Position = UDim2.new(0, 64, 0, 31),
-		BackgroundTransparency = 1,
-		Text = "@player",
-		TextColor3 = Library.Theme.TextMuted,
-		FontFace = FontStandard,
-		TextSize = 11,
-		TextTruncate = Enum.TextTruncate.AtEnd,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = SidebarFooter,
-	})
-
-	local Player = Players.LocalPlayer
-	if Player then
-		PlayerName.Text = Player.DisplayName ~= "" and Player.DisplayName or Player.Name
-		Username.Text = "@" .. Player.Name
-		local okThumb, content = pcall(function()
-			return Players:GetUserThumbnailAsync(Player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
-		end)
-		if okThumb and type(content) == "string" then
-			ProfileAvatar.Image = content
-		else
-			ProfileAvatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(Player.UserId) .. "&w=100&h=100"
+	AddConnection(SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+		local query = string.lower(SearchBox.Text or "")
+		for _, entry in ipairs(Window.Tabs) do
+			entry.Button.Visible = query == "" or string.find(string.lower(entry.Name), query, 1, true) ~= nil
+			if entry.Accent and Window.CurrentTab then
+				entry.Accent.Visible = Window.CurrentTab == entry and query == ""
+			end
 		end
-	end
+		if Window.CurrentTab and Window.CurrentTab.Page then
+			for _, child in ipairs(Window.CurrentTab.Page:GetDescendants()) do
+				if child:IsA("GuiObject") and child:GetAttribute("ZenSearchText") then
+					child.Visible = query == "" or string.find(string.lower(child:GetAttribute("ZenSearchText")), query, 1, true) ~= nil
+				end
+			end
+		end
+	end))
+
+	-- ------------------------------------------------------------ tab rail
+	local TabRail = Create("ScrollingFrame", {
+		Name = "TabRail",
+		Size = UDim2.new(1, 0, 0, LAYOUT.TabRailHeight),
+		Position = UDim2.new(0, 0, 0, LAYOUT.TopBarHeight),
+		BackgroundTransparency = 1,
+		ScrollBarThickness = 0,
+		ScrollingDirection = Enum.ScrollingDirection.X,
+		AutomaticCanvasSize = Enum.AutomaticSize.X,
+		CanvasSize = UDim2.new(0, 0, 0, 0),
+		Parent = MainFrame,
+	})
+	Create("UIPadding", {
+		PaddingLeft = UDim.new(0, LAYOUT.TabPadX),
+		PaddingRight = UDim.new(0, LAYOUT.TabPadX),
+		PaddingTop = UDim.new(0, (LAYOUT.TabRailHeight - LAYOUT.TabHeight) / 2),
+		PaddingBottom = UDim.new(0, (LAYOUT.TabRailHeight - LAYOUT.TabHeight) / 2),
+		Parent = TabRail,
+	})
+	local TabRailLayout = Create("UIListLayout", {
+		FillDirection = Enum.FillDirection.Horizontal,
+		SortOrder = Enum.SortOrder.LayoutOrder,
+		Padding = UDim.new(0, LAYOUT.TabGap),
+		Parent = TabRail,
+	})
+	AddConnection(TabRailLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function()
+		TabRail.CanvasSize = UDim2.new(0, TabRailLayout.AbsoluteContentSize.X + 28, 0, 0)
+	end))
+	Create("Frame", { Size = UDim2.new(1, 0, 0, 1), Position = UDim2.new(0, 0, 0, LAYOUT.TopBarHeight + LAYOUT.TabRailHeight), BackgroundColor3 = Library.Theme.Border, Transparency = 0.6, BorderSizePixel = 0, Parent = MainFrame })
 
 	-- ------------------------------------------------------------ content
 	local ContentContainer = Create("Frame", {
 		Name = "ContentContainer",
-		Size = UDim2.new(1, -SidebarWidth, 1, -LAYOUT.HeaderHeight),
-		Position = UDim2.new(0, SidebarWidth, 0, LAYOUT.HeaderHeight),
+		Size = UDim2.new(1, 0, 1, -(LAYOUT.TopBarHeight + LAYOUT.TabRailHeight)),
+		Position = UDim2.new(0, 0, 0, LAYOUT.TopBarHeight + LAYOUT.TabRailHeight),
 		BackgroundTransparency = 1,
 		Parent = MainFrame,
 	})
 
-	local ContentTop = Create("Frame", {
+	local ContentStrip = Create("Frame", {
 		Name = "ContentTop",
-		Size = UDim2.new(1, -28, 0, LAYOUT.ContentTopHeight),
+		Size = UDim2.new(1, -28, 0, LAYOUT.ContentStripHeight),
 		Position = UDim2.new(0, 14, 0, 12),
 		BackgroundColor3 = Library.Theme.Surface,
-		BackgroundTransparency = 0.25,
+		BackgroundTransparency = 0.35,
 		BorderSizePixel = 0,
 		Parent = ContentContainer,
 	})
-	Corner(ContentTop, LAYOUT.ContentTopRadius)
-	Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1, Transparency = 0.7, Parent = ContentTop })
-	local TopSheen = Create("Frame", { Size = UDim2.new(0, 3, 0, 30), Position = UDim2.new(0, 8, 0.5, -15), BackgroundColor3 = Library.Theme.Accent, BackgroundTransparency = 0.15, BorderSizePixel = 0, Parent = ContentTop })
-	Corner(TopSheen, 2)
+	Corner(ContentStrip, LAYOUT.ContentStripRadius)
+	Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1, Transparency = 0.7, Parent = ContentStrip })
+	local StripAccentBar = Create("Frame", { Size = UDim2.new(0, 3, 0, 26), Position = UDim2.new(0, 10, 0.5, -13), BackgroundColor3 = Library.Theme.Accent, BackgroundTransparency = 0.1, BorderSizePixel = 0, Parent = ContentStrip })
+	Corner(StripAccentBar, 2)
 
 	local PageKicker = Create("TextLabel", {
-		Size = UDim2.new(1, -300, 0, 15),
-		Position = UDim2.new(0, 22, 0, 7),
-		BackgroundTransparency = 1,
-		Text = "WORKSPACE",
-		TextColor3 = Library.Theme.TextMuted,
-		FontFace = FontBold,
-		TextSize = 9,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = ContentTop,
+		Size = UDim2.new(1, -320, 0, 14), Position = UDim2.new(0, 22, 0, 6),
+		BackgroundTransparency = 1, Text = "WORKSPACE", TextColor3 = Library.Theme.TextMuted, FontFace = FontBold, TextSize = 9,
+		TextXAlignment = Enum.TextXAlignment.Left, Parent = ContentStrip,
 	})
 	local CurrentPageLabel = Create("TextLabel", {
-		Size = UDim2.new(1, -300, 0, 22),
-		Position = UDim2.new(0, 22, 0, 23),
-		BackgroundTransparency = 1,
-		Text = "Select a tab",
-		TextColor3 = Library.Theme.Text,
-		FontFace = FontBold,
-		TextSize = 15,
-		TextXAlignment = Enum.TextXAlignment.Left,
-		Parent = ContentTop,
+		Size = UDim2.new(1, -320, 0, 20), Position = UDim2.new(0, 22, 0, 21),
+		BackgroundTransparency = 1, Text = "Select a tab", TextColor3 = Library.Theme.Text, FontFace = FontBold, TextSize = 14,
+		TextXAlignment = Enum.TextXAlignment.Left, Parent = ContentStrip,
 	})
 
-	local ThemeMini = Create("TextButton", {
-		Size = UDim2.new(0, 116, 0, 32),
-		Position = UDim2.new(1, -128, 0.5, -16),
-		BackgroundColor3 = Library.Theme.Element,
-		Text = Library.ThemeName,
-		TextColor3 = Library.Theme.Accent,
-		FontFace = FontBold,
-		TextSize = 11,
-		AutoButtonColor = false,
-		Parent = ContentTop,
+	ThemeMini = Create("TextButton", {
+		Size = UDim2.new(0, 116, 0, 30), Position = UDim2.new(1, -128, 0.5, -15),
+		BackgroundColor3 = Library.Theme.Element, Text = Library.ThemeName, TextColor3 = Library.Theme.Accent,
+		FontFace = FontBold, TextSize = 11, AutoButtonColor = false, Parent = ContentStrip,
 	})
 	Corner(ThemeMini, 9)
 	Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1, Transparency = 0.5, Parent = ThemeMini })
 	AddConnection(ThemeMini.MouseButton1Click:Connect(CycleTheme))
-	local ThemeMiniGlow = Create("Frame", { Size = UDim2.new(1, 10, 1, 10), Position = UDim2.new(0.5, 0, 0.5, 0), AnchorPoint = Vector2.new(0.5, 0.5), BackgroundColor3 = Library.Theme.Accent, BackgroundTransparency = 0.9, BorderSizePixel = 0, Parent = ThemeMini })
-	Corner(ThemeMiniGlow, 16)
 
-	-- collapse
-	local function UpdateTabsCollapsed(collapsed)
-		for _, entry in ipairs(Window.Tabs) do
-			entry.Text.Visible = not collapsed
-			if entry.Badge then entry.Badge.Visible = not collapsed end
-			entry.Button.Size = UDim2.new(1, collapsed and -16 or -20, 0, LAYOUT.NavHeight)
-			local iconCx = collapsed and 14 or 24
-			entry.Icon.Position = UDim2.new(0, iconCx - 14, 0.5, -14)
+	-- ------------------------------------------------------------ player chip
+	local PlayerChip = Create("Frame", {
+		Name = "PlayerProfile",
+		Size = UDim2.new(0, LAYOUT.PlayerChipW, 0, LAYOUT.PlayerChipH),
+		Position = UDim2.new(0, 14, 1, -LAYOUT.PlayerChipH - 16),
+		BackgroundColor3 = Library.Theme.SurfaceStrong,
+		BackgroundTransparency = 0.2,
+		BorderSizePixel = 0,
+		Parent = MainFrame,
+	})
+	Corner(PlayerChip, LAYOUT.PlayerChipRadius)
+	Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1, Transparency = 0.6, Parent = PlayerChip })
+	local ChipAvatar = Create("ImageLabel", {
+		Name = "Avatar",
+		Size = UDim2.new(0, 38, 0, 38),
+		Position = UDim2.new(0, 10, 0.5, -19),
+		BackgroundColor3 = Library.Theme.Element,
+		BackgroundTransparency = 0,
+		Image = "",
+		ScaleType = Enum.ScaleType.Crop,
+		Parent = PlayerChip,
+	})
+	Corner(ChipAvatar, 10)
+	Create("UIStroke", { Color = Library.Theme.Accent, Thickness = 1.6, Transparency = 0.4, Parent = ChipAvatar })
+	local ChipName = Create("TextLabel", {
+		Size = UDim2.new(1, -56, 0, 18), Position = UDim2.new(0, 56, 0, 9),
+		BackgroundTransparency = 1, Text = "Player", TextColor3 = Library.Theme.Text, FontFace = FontBold, TextSize = 13,
+		TextTruncate = Enum.TextTruncate.AtEnd, TextXAlignment = Enum.TextXAlignment.Left, Parent = PlayerChip,
+	})
+	local ChipUser = Create("TextLabel", {
+		Size = UDim2.new(1, -56, 0, 16), Position = UDim2.new(0, 56, 0, 28),
+		BackgroundTransparency = 1, Text = "@player", TextColor3 = Library.Theme.TextMuted, FontFace = FontStandard, TextSize = 11,
+		TextTruncate = Enum.TextTruncate.AtEnd, TextXAlignment = Enum.TextXAlignment.Left, Parent = PlayerChip,
+	})
+	local Player = Players.LocalPlayer
+	if Player then
+		ChipName.Text = Player.DisplayName ~= "" and Player.DisplayName or Player.Name
+		ChipUser.Text = "@" .. Player.Name
+		local okThumb, content = pcall(function()
+			return Players:GetUserThumbnailAsync(Player.UserId, Enum.ThumbnailType.HeadShot, Enum.ThumbnailSize.Size100x100)
+		end)
+		if okThumb and type(content) == "string" then
+			ChipAvatar.Image = content
+		else
+			ChipAvatar.Image = "rbxthumb://type=AvatarHeadShot&id=" .. tostring(Player.UserId) .. "&w=100&h=100"
 		end
 	end
 
-	AddConnection(CollapseButton.MouseButton1Click:Connect(function()
-		Collapsed = not Collapsed
-		local targetWidth = Collapsed and LAYOUT.SidebarCollapsedWidth or SidebarWidth
-		SpringTween(Sidebar, { Size = UDim2.new(0, targetWidth, 1, -LAYOUT.HeaderHeight) }, 0.26)
-		SpringTween(ContentContainer, { Size = UDim2.new(1, -targetWidth, 1, -LAYOUT.HeaderHeight), Position = UDim2.new(0, targetWidth, 0, LAYOUT.HeaderHeight) }, 0.26)
-		Tween(CollapseButton, { Rotation = Collapsed and 180 or 0 }, 0.2)
-		NavLabel.Visible = not Collapsed
-		SidebarFooter.Visible = not Collapsed
-		UpdateTabsCollapsed(Collapsed)
-	end))
-
-	-- ------------------------------------------------------------ state
+-- ------------------------------------------------------------ state
 	local WindowState = { Minimized = false, Closed = false }
 	local RestoreHeight = BaseWindowHeight
 
@@ -1331,8 +1246,8 @@ function Library:CreateWindow(options)
 		WindowState.Minimized = false
 		HideLauncher()
 		MainFrame.Visible = true
-		Sidebar.Visible = true
 		ContentContainer.Visible = true
+		PlayerChip.Visible = true
 		MainFrame.BackgroundTransparency = 0
 		SpringTween(MainScale, { Scale = Library.UIScale }, 0.3)
 		SpringTween(MainFrame, { Size = UDim2.new(0, BaseWindowWidth, 0, RestoreHeight) }, 0.34)
@@ -1341,8 +1256,8 @@ function Library:CreateWindow(options)
 	function WindowState:Minimize()
 		if WindowState.Closed or WindowState.Minimized then return end
 		WindowState.Minimized = true
-		Sidebar.Visible = false
 		ContentContainer.Visible = false
+		PlayerChip.Visible = false
 		SpringTween(MainScale, { Scale = 0.82 }, 0.16)
 		task.delay(0.16, function()
 			if MainFrame.Parent and WindowState.Minimized then
@@ -1388,8 +1303,8 @@ function Library:CreateWindow(options)
 		MainFrame.BackgroundTransparency = 0
 		MainFrame.Size = UDim2.new(0, BaseWindowWidth, 0, BaseWindowHeight)
 		MainScale.Scale = 0.88
-		Sidebar.Visible = true
 		ContentContainer.Visible = true
+		PlayerChip.Visible = true
 		SpringTween(MainScale, { Scale = Library.UIScale }, 0.38)
 	end))
 
@@ -1398,8 +1313,8 @@ function Library:CreateWindow(options)
 		WindowVisible = true
 		WindowState.Closed = false
 		MainFrame.Visible = true
-		Sidebar.Visible = not WindowState.Minimized
 		ContentContainer.Visible = not WindowState.Minimized
+		PlayerChip.Visible = not WindowState.Minimized
 		MainFrame.BackgroundTransparency = 0
 		SpringTween(MainScale, { Scale = Library.UIScale }, 0.28)
 	end
@@ -1471,63 +1386,62 @@ function Library:CreateWindow(options)
 			Tween(MainFrame, { BackgroundTransparency = 0 }, 0.26)
 			SpringTween(MainScale, { Scale = Library.UIScale }, 0.48)
 		end
-	end)-- ------------------------------------------------------------ tabs
-	function Window:CreateTab(tabOptions)
+	end)
+
+function Window:CreateTab(tabOptions)
 		tabOptions = tabOptions or {}
 		local Tab: { [string]: any } = { Elements = {} }
 		local TabName = tabOptions.Name or "Tab"
-		local TabButton = Create("TextButton", {
+		local TabPill = Create("TextButton", {
 			Name = TabName .. "Btn",
-			Size = UDim2.new(1, -20, 0, LAYOUT.NavHeight),
+			Size = UDim2.new(0, LAYOUT.TabWidth, 0, LAYOUT.TabHeight),
 			BackgroundColor3 = Library.Theme.Element,
-			BackgroundTransparency = 0.2,
+			BackgroundTransparency = 0.15,
 			Text = "",
-			TextColor3 = Library.Theme.TextMuted,
+			TextColor3 = Library.Theme.Text,
 			FontFace = FontStandard,
 			TextSize = 13,
 			AutoButtonColor = false,
-			Parent = TabContainer,
+			Parent = TabRail,
 		})
-		Corner(TabButton, LAYOUT.NavRadius)
-		Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1, Transparency = 0.6, Parent = TabButton })
-		local IconHolder = Create("Frame", { Size = UDim2.new(0, 28, 0, 28), Position = UDim2.new(0, 10, 0.5, -14), BackgroundTransparency = 1, Parent = TabButton })
+		Corner(TabPill, LAYOUT.TabRadius)
+		Create("UIStroke", { Color = Library.Theme.Border, Thickness = 1, Transparency = 0.6, Parent = TabPill })
+		local IconHolder = Create("Frame", { Size = UDim2.new(0, 22, 0, 22), Position = UDim2.new(0, 10, 0.5, -11), BackgroundTransparency = 1, Parent = TabPill })
 		local TabIcon = CreateIcon(IconHolder, tabOptions.Icon or "menu", Library.Theme.TextMuted)
+		TabIcon.Size = UDim2.new(0, 22, 0, 22)
+		TabIcon.Position = UDim2.new(0.5, -11, 0.5, -11)
 		local TabText = Create("TextLabel", {
-			Size = UDim2.new(1, -52, 1, 0), Position = UDim2.new(0, 44, 0, 0),
+			Size = UDim2.new(1, -48, 1, 0), Position = UDim2.new(0, 36, 0, 0),
 			BackgroundTransparency = 1, Text = TabName, TextColor3 = Library.Theme.TextMuted, FontFace = FontBold, TextSize = 13,
-			TextXAlignment = Enum.TextXAlignment.Left, Parent = TabButton,
+			TextXAlignment = Enum.TextXAlignment.Left, Parent = TabPill,
 		})
-		local TabAccent = Create("Frame", {
-			Size = UDim2.new(0, 3, 0, 22), Position = UDim2.new(0, 7, 0.5, -11),
-			BackgroundColor3 = Library.Theme.Accent, BackgroundTransparency = 0, BorderSizePixel = 0, Visible = #Window.Tabs == 0, Parent = TabButton,
-		})
-		Corner(TabAccent, 3)
 		local Badge = nil
 		if tabOptions.Badge then
 			Badge = Create("TextLabel", {
-				Size = UDim2.new(0, 30, 0, 20), Position = UDim2.new(1, -38, 0.5, -10),
-				BackgroundColor3 = Library.Theme.SurfaceStrong, Text = tostring(tabOptions.Badge), TextColor3 = Library.Theme.TextMuted, FontFace = FontBold, TextSize = 10, Parent = TabButton,
+				Size = UDim2.new(0, 26, 0, 18), Position = UDim2.new(1, -34, 0.5, -9),
+				BackgroundColor3 = Library.Theme.SurfaceStrong, Text = tostring(tabOptions.Badge), TextColor3 = Library.Theme.Accent, FontFace = FontBold, TextSize = 9, Parent = TabPill,
 			})
-			Corner(Badge, 8)
+			Corner(Badge, 7)
+			TabText.Size = UDim2.new(1, -80, 1, 0) -- keep clear of the badge
 		end
 
-		AddConnection(TabButton.MouseEnter:Connect(function()
+		AddConnection(TabPill.MouseEnter:Connect(function()
 			if Window.CurrentTab ~= Tab then
-				Tween(TabButton, { BackgroundColor3 = Library.Theme.ElementHover, BackgroundTransparency = 0.1 }, 0.14)
+				Tween(TabPill, { BackgroundColor3 = Library.Theme.ElementHover, BackgroundTransparency = 0.05 }, 0.14)
 				SetIconColor(TabIcon, Library.Theme.Text)
 			end
 		end))
-		AddConnection(TabButton.MouseLeave:Connect(function()
+		AddConnection(TabPill.MouseLeave:Connect(function()
 			if Window.CurrentTab ~= Tab then
-				Tween(TabButton, { BackgroundColor3 = Library.Theme.Element, BackgroundTransparency = 0.2 }, 0.14)
+				Tween(TabPill, { BackgroundColor3 = Library.Theme.Element, BackgroundTransparency = 0.15 }, 0.14)
 				SetIconColor(TabIcon, Library.Theme.TextMuted)
 			end
 		end))
 
 		local Page = Create("ScrollingFrame", {
 			Name = TabName .. "Page",
-			Size = UDim2.new(1, -4, 1, -32 - LAYOUT.ContentTopHeight),
-			Position = UDim2.new(0, 2, 0, 24 + LAYOUT.ContentTopHeight),
+			Size = UDim2.new(1, -4, 1, -20 - LAYOUT.ContentStripHeight),
+			Position = UDim2.new(0, 2, 0, 16 + LAYOUT.ContentStripHeight),
 			BackgroundTransparency = 1,
 			ScrollBarThickness = 4,
 			ScrollingDirection = Enum.ScrollingDirection.Y,
@@ -1554,11 +1468,11 @@ function Library:CreateWindow(options)
 			Page.CanvasSize = UDim2.new(0, 0, 0, math.max(Page.AbsoluteWindowSize.Y, PageLayout.AbsoluteContentSize.Y + 38))
 		end))
 
-		AddConnection(TabButton.MouseButton1Click:Connect(function()
+		AddConnection(TabPill.MouseButton1Click:Connect(function()
 			for _, tb in ipairs(Window.Tabs) do
 				tb.Page.Visible = false
 				tb.Accent.Visible = false
-				Tween(tb.Button, { BackgroundColor3 = Library.Theme.Element, BackgroundTransparency = 0.2 }, 0.18)
+				Tween(tb.Button, { BackgroundColor3 = Library.Theme.Element, BackgroundTransparency = 0.15 }, 0.18)
 				SetIconColor(tb.Icon, Library.Theme.TextMuted)
 			end
 			Window.CurrentTab = Tab
@@ -1566,25 +1480,29 @@ function Library:CreateWindow(options)
 			PageKicker.Text = string.upper(TabName)
 			Page.Visible = true
 			PageScale.Scale = 0.985
-			TabAccent.Visible = true
 			SpringTween(PageScale, { Scale = 1 }, 0.3)
-			SpringTween(TabButton, { BackgroundColor3 = Library.Theme.Accent, BackgroundTransparency = 0.12 }, 0.24)
+			SpringTween(TabPill, { BackgroundColor3 = Library.Theme.Accent, BackgroundTransparency = 0.08 }, 0.24)
 			SetIconColor(TabIcon, Library.Theme.Background)
 		end))
+
+		local TabAccent = Create("Frame", {
+			Size = UDim2.new(1, -16, 0, 3), Position = UDim2.new(0, 8, 1, -4),
+			BackgroundColor3 = Library.Theme.Accent, BackgroundTransparency = 0.15, BorderSizePixel = 0, Visible = #Window.Tabs == 0, Parent = TabPill,
+		})
+		Corner(TabAccent, 2)
 
 		if #Window.Tabs == 0 then
 			Page.Visible = true
 			Window.CurrentTab = Tab
-			TabButton.BackgroundColor3 = Library.Theme.Accent
-			TabButton.BackgroundTransparency = 0.12
+			TabPill.BackgroundColor3 = Library.Theme.Accent
+			TabPill.BackgroundTransparency = 0.08
 			SetIconColor(TabIcon, Library.Theme.Background)
 			TabAccent.Visible = true
 			CurrentPageLabel.Text = TabName
 			PageKicker.Text = string.upper(TabName)
 		end
 
-		table.insert(Window.Tabs, { Button = TabButton, Page = Page, Accent = TabAccent, Icon = TabIcon, Text = TabText, Badge = Badge, Name = TabName, PageScale = PageScale })
-
+		table.insert(Window.Tabs, { Button = TabPill, Page = Page, Accent = TabAccent, Icon = IconHolder, Text = TabText, Badge = Badge, Name = TabName, PageScale = PageScale, Rail = TabPill, PillText = TabText })
 		-- columns
 		function Tab:SetColumn(column)
 			if type(column) == "table" and column._Parent then self._ParentOverride = column._Parent else self._ParentOverride = nil end
@@ -1848,7 +1766,7 @@ function Library:CreateWindow(options)
 
 			local Chevron = Create("TextLabel", {
 				Size = UDim2.new(0, 24, 0, 24), Position = UDim2.new(1, -32, 0.5, -12),
-				BackgroundTransparency = 1, Text = "▾", TextColor3 = Library.Theme.TextMuted, FontFace = FontBold, TextSize = 13, Parent = TopBar,
+				BackgroundTransparency = 1, Text = "â–¾", TextColor3 = Library.Theme.TextMuted, FontFace = FontBold, TextSize = 13, Parent = TopBar,
 			})
 
 			local ListContainer = Create("Frame", {

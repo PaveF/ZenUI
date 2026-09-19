@@ -99,13 +99,13 @@ local function applySkin(Library, window, options)
 
 	-- window rim
 	accentStroke(window, accent, 0.8, 1.1)
-	local header = window:FindFirstChild("Header")
-	if header then
-		accentStroke(header, accent, 0.85, 1)
+	local topBar = window:FindFirstChild("TopBar")
+	if topBar then
+		accentStroke(topBar, accent, 0.85, 1)
 	end
-	local sidebar = window:FindFirstChild("Sidebar")
-	if sidebar then
-		accentStroke(sidebar, accent, 0.88, 1)
+	local tabRail = window:FindFirstChild("TabRail")
+	if tabRail then
+		accentStroke(tabRail, accent, 0.9, 1)
 	end
 
 	ambientGlow(window, accent)
