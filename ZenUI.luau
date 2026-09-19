@@ -17,8 +17,8 @@ local RAW_ROOT = "https://raw.githubusercontent.com/vxa-020/ZenUI"
 local OFFICIAL_AUTHOR = "PaveF"
 local OFFICIAL_VERSION = "3.0.0"
 
--- Pinned after the content commit: set to the SHA that contains all four files.
-local CONTENT_COMMIT = "UPDATE_ME"
+-- Pinned to the content commit that contains all four files (see git log).
+local CONTENT_COMMIT = "4ce77ab66d17ba801e6b2ea4c463e7c9ab58e56d"
 
 local CORE = RAW_ROOT .. "/" .. CONTENT_COMMIT .. "/ZenUI.Core.luau"
 local SKIN = RAW_ROOT .. "/" .. CONTENT_COMMIT .. "/ZenUI.ApexVisuals.luau"
