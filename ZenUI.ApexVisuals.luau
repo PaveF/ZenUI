@@ -1,12 +1,11 @@
 -- ZenUI Apex Visual System
--- Premium visual layer: applies animated depth, sheen, and polish to an
--- already-constructed ZenUI Library. No network access, no core loading.
--- Usage: local Library = loadstring(game:HttpGet(...ZenUI.luau...))()
---        -- ZenUI.luau loads this module internally.
+-- Glass/neon accent layer. The v3 core carries the full glass design; this
+-- module adds per-window accent plumbing, ambient glow feed, and safe
+-- teardown. It is loaded by ZenUI.luau AFTER the core:
 --
--- This module is also safe to run standalone AFTER a ZenUI core exists:
---   local Library = getgenv().Library
---   loadstring(game:HttpGet(".../ZenUI.ApexVisuals.luau"))()(Library)
+--   loadRemote(SKIN, "ZenUI.ApexVisuals", Library)
+--
+-- It is also safe standalone when a core already exists in getgenv().
 
 local TweenService = game:GetService("TweenService")
 local ENV = (getgenv and getgenv()) or _G
@@ -60,69 +59,33 @@ local function accentStroke(parent, color, transparency, thickness)
 	return s
 end
 
-local function styleButton(button, hoverColor, normalColor)
-	if not button or not button:IsA("GuiButton") or button:GetAttribute("ZenApexStyled") then return end
-	button:SetAttribute("ZenApexStyled", true)
-	local scale = button:FindFirstChild("ZenApexScale")
-	if not scale then
-		scale = Instance.new("UIScale")
-		scale.Name = "ZenApexScale"
-		scale.Scale = 1
-		scale.Parent = button
-	end
-	con(button.MouseEnter, function()
-		tween(scale, {Scale = 1.02}, 0.14, Enum.EasingStyle.Back)
-		if button.BackgroundTransparency < 1 then
-			tween(button, {BackgroundColor3 = hoverColor}, 0.12)
+-- Ambient accent feed for the window: a soft top-edge light that breathes.
+local function ambientGlow(window, accent)
+	if not window or window:GetAttribute("ZenApexGlow") then return end
+	window:SetAttribute("ZenApexGlow", true)
+	local glow = Instance.new("Frame")
+	glow.Name = "ZenApexAmbient"
+	glow.Size = UDim2.new(1, 0, 0, 2)
+	glow.Position = UDim2.new(0, 0, 0, 0)
+	glow.BackgroundColor3 = accent
+	glow.BackgroundTransparency = 0.35
+	glow.BorderSizePixel = 0
+	glow.ZIndex = 20
+	glow.Parent = window
+	corner(glow, 2)
+	local on = true
+	con(window.AncestryChanged, function()
+		if not window.Parent then on = false end
+	end)
+	task.spawn(function()
+		while on and glow.Parent do
+			tween(glow, { BackgroundTransparency = 0.65 }, 1.2)
+			task.wait(1.2)
+			tween(glow, { BackgroundTransparency = 0.3 }, 1.2)
+			task.wait(1.2)
 		end
 	end)
-	con(button.MouseLeave, function()
-		tween(scale, {Scale = 1}, 0.12, Enum.EasingStyle.Back)
-		if button.BackgroundTransparency < 1 then
-			tween(button, {BackgroundColor3 = normalColor}, 0.12)
-		end
-	end)
-	con(button.MouseButton1Down, function()
-		tween(scale, {Scale = 0.97}, 0.06, Enum.EasingStyle.Quad)
-	end)
-	con(button.MouseButton1Up, function()
-		tween(scale, {Scale = 1.02}, 0.08, Enum.EasingStyle.Back)
-	end)
-end
-
-local function sheenSweep(target)
-	if not target or not target.Parent or target:GetAttribute("ZenApexSheen") then return end
-	target:SetAttribute("ZenApexSheen", true)
-	local sheen = Instance.new("Frame")
-	sheen.Name = "ZenApexSheenBar"
-	sheen.Size = UDim2.new(0, 80, 1.4, 0)
-	sheen.Position = UDim2.new(-1.2, 0, -0.2, 0)
-	sheen.Rotation = 20
-	sheen.BackgroundColor3 = Color3.new(1, 1, 1)
-	sheen.BackgroundTransparency = 0.92
-	sheen.BorderSizePixel = 0
-	sheen.ZIndex = (target.ZIndex or 1) + 1
-	sheen.Visible = false
-	sheen.Parent = target
-	local grad = Instance.new("UIGradient")
-	grad.Rotation = 90
-	grad.Transparency = NumberSequence.new({
-		NumberSequenceKeypoint.new(0, 1),
-		NumberSequenceKeypoint.new(0.5, 0.6),
-		NumberSequenceKeypoint.new(1, 1),
-	})
-	grad.Parent = sheen
-	con(target.MouseEnter, function()
-		if target.ClipsDescendants == false and target.Visible then
-			sheen.Visible = true
-			sheen.Position = UDim2.new(-1.2, 0, -0.2, 0)
-			tween(sheen, {Position = UDim2.new(1.4, 0, -0.2, 0)}, 0.55, Enum.EasingStyle.Quad)
-		end
-	end)
-	con(target.MouseLeave, function()
-		sheen.Visible = false
-	end)
-	return sheen
+	return glow
 end
 
 local function applySkin(Library, window, options)
@@ -131,78 +94,21 @@ local function applySkin(Library, window, options)
 
 	local accent = options and options.AccentColor
 	if typeof(accent) ~= "Color3" then
-		accent = Color3.fromRGB(78, 255, 185)
+		accent = Library.Theme.Accent or Color3.fromRGB(78, 255, 185)
 	end
 
-	local base = Color3.fromRGB(8, 12, 16)
-	local panel = Color3.fromRGB(11, 16, 22)
-	local panelSoft = Color3.fromRGB(14, 20, 27)
-	local text = Color3.fromRGB(244, 247, 250)
-	local muted = Color3.fromRGB(145, 154, 164)
-	local hover = Color3.fromRGB(24, 32, 40)
-
-	window.BackgroundColor3 = base
-	window.BackgroundTransparency = 0
-	window.ClipsDescendants = true
-	corner(window, 20)
-	accentStroke(window, accent, 0.68, 1.25)
-
+	-- window rim
+	accentStroke(window, accent, 0.8, 1.1)
 	local header = window:FindFirstChild("Header")
 	if header then
-		header.BackgroundColor3 = panel
-		header.BackgroundTransparency = 0
-		header.ClipsDescendants = true
-		corner(header, 18)
-		accentStroke(header, accent, 0.7, 1.1)
-		local sheen = header:FindFirstChild("HeaderSheen")
-		if sheen then
-			sheen.BackgroundTransparency = 0.955
-		end
+		accentStroke(header, accent, 0.85, 1)
 	end
-
 	local sidebar = window:FindFirstChild("Sidebar")
 	if sidebar then
-		sidebar.BackgroundColor3 = panelSoft
-		sidebar.BackgroundTransparency = 0
-		sidebar.ClipsDescendants = true
-		corner(sidebar, 16)
-		accentStroke(sidebar, accent, 0.78, 1.1)
+		accentStroke(sidebar, accent, 0.88, 1)
 	end
 
-	local content = window:FindFirstChild("ContentContainer")
-	if content then
-		local top = content:FindFirstChild("ContentTop")
-		if top then
-			top.BackgroundColor3 = panel
-			top.BackgroundTransparency = 0
-			corner(top, 14)
-			accentStroke(top, accent, 0.84, 1)
-		end
-	end
-
-	for _, instance in ipairs(window:GetDescendants()) do
-		if instance:IsA("TextLabel") or instance:IsA("TextButton") or instance:IsA("TextBox") then
-			if instance.TextColor3 == Color3.fromRGB(248, 248, 250) then
-				instance.TextColor3 = text
-			elseif instance.TextColor3 == Color3.fromRGB(150, 152, 158) then
-				instance.TextColor3 = muted
-			end
-		end
-
-		if instance:IsA("GuiButton") then
-			styleButton(instance, hover, instance.BackgroundColor3)
-			sheenSweep(instance)
-		end
-	end
-
-	con(window.DescendantAdded, function(instance)
-		task.defer(function()
-			if instance.Parent and instance:IsA("GuiButton") then
-				styleButton(instance, hover, instance.BackgroundColor3)
-				sheenSweep(instance)
-			end
-		end)
-	end)
+	ambientGlow(window, accent)
 
 	pcall(function()
 		Library:SetAccentColor(accent)
@@ -221,9 +127,8 @@ return function(Library)
 	Library.CreateWindow = function(self, options)
 		options = type(options) == "table" and table.clone(options) or {}
 		if typeof(options.AccentColor) ~= "Color3" then
-			options.AccentColor = Color3.fromRGB(78, 255, 185)
+			options.AccentColor = Library.Theme.Accent or Color3.fromRGB(78, 255, 185)
 		end
-		options.UIScale = math.clamp(tonumber(options.UIScale) or 1.00, 0.85, 1.30)
 		local window = oldCreateWindow(self, options)
 		task.defer(function()
 			applySkin(self, self.MainFrame, options)

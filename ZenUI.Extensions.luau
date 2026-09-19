@@ -84,12 +84,34 @@ local function row(tab, name, height)
 	f.Name = name or "ZenControl"
 	f.Size = UDim2.new(1, 0, 0, height or 48)
 	f.BackgroundColor3 = Library.Theme.Element
+	f.BackgroundTransparency = 0.1
 	f.BorderSizePixel = 0
 	f.Parent = parentOf(tab)
 	corner(f, 12)
-	stroke(f, Library.Theme.Border, 0.45, 1)
+	stroke(f, Library.Theme.Border, 0.6, 1)
 	if tab.Elements then table.insert(tab.Elements, f) end
 	return f
+end
+
+local function accentBar(parent, width, inset)
+	local rail = Instance.new("Frame")
+	rail.Size = UDim2.new(0, width or 3, 0, 18)
+	rail.Position = UDim2.new(0, inset or 10, 0.5, -9)
+	rail.BackgroundColor3 = Library.Theme.Accent
+	rail.BackgroundTransparency = 0.05
+	rail.BorderSizePixel = 0
+	rail.Parent = parent
+	corner(rail, 2)
+	return rail
+end
+
+local function accentStrokeTop(parent)
+	local s = Instance.new("UIStroke")
+	s.Color = Library.Theme.Accent
+	s.Transparency = 0.65
+	s.Thickness = 1
+	s.Parent = parent
+	return s
 end
 
 function Library:CreateCommandCenter(o)
@@ -100,7 +122,8 @@ function Library:CreateCommandCenter(o)
 	box.Size = UDim2.new(0, math.clamp(o.Width or 480, 280, 680), 0, 48)
 	box.AnchorPoint = Vector2.new(0.5, 0)
 	box.Position = UDim2.new(0.5, 0, 0, o.Top or 150)
-	box.BackgroundColor3 = Library.Theme.Element
+	box.BackgroundColor3 = Library.Theme.SurfaceStrong
+	box.BackgroundTransparency = 0.1
 	box.TextColor3 = Library.Theme.Text
 	box.PlaceholderColor3 = Library.Theme.TextMuted
 	box.PlaceholderText = o.PlaceholderText or "Command, setting, action..."
@@ -117,7 +140,8 @@ function Library:CreateCommandCenter(o)
 	list.Position = UDim2.new(0, 0, 1, 8)
 	list.Size = UDim2.new(1, 0, 0, 0)
 	list.AutomaticSize = Enum.AutomaticSize.Y
-	list.BackgroundColor3 = Library.Theme.Element
+	list.BackgroundColor3 = Library.Theme.SurfaceStrong
+	list.BackgroundTransparency = 0.1
 	list.Visible = false
 	list.Parent = box
 	corner(list, 14)
@@ -193,10 +217,12 @@ function Library:CreateStatusBar(o)
 		bar.Position = o.Position or UDim2.new(1, -318, 1, -56)
 	end
 	bar.BackgroundColor3 = Library.Theme.SurfaceStrong or Library.Theme.Element
+	bar.BackgroundTransparency = 0.15
 	bar.BorderSizePixel = 0
 	bar.Parent = p
 	corner(bar, 11)
-	stroke(bar, Library.Theme.Border, 0.45, 1)
+	stroke(bar, Library.Theme.Border, 0.55, 1)
+	accentBar(bar, 3, 10)
 
 	local dot = Instance.new("Frame")
 	dot.Size = UDim2.new(0, 8, 0, 8)
@@ -243,12 +269,14 @@ function Library:CreateContextMenu(o)
 	menu.Name = "ZenContextMenu"
 	menu.Size = UDim2.new(0, math.clamp(o.Width or 220, 150, 360), 0, 0)
 	menu.AutomaticSize = Enum.AutomaticSize.Y
-	menu.BackgroundColor3 = Library.Theme.Element
+	menu.BackgroundColor3 = Library.Theme.SurfaceStrong or Library.Theme.Element
+	menu.BackgroundTransparency = 0.12
 	menu.Visible = false
 	menu.ZIndex = 500
 	menu.Parent = self.MainFrame
 	corner(menu, 12)
-	stroke(menu, Library.Theme.Border, 0.3, 1.1)
+	stroke(menu, Library.Theme.Border, 0.4, 1.1)
+	accentStrokeTop(menu)
 	local pad = Instance.new("UIPadding")
 	pad.PaddingTop = UDim.new(0, 7)
 	pad.PaddingBottom = UDim.new(0, 7)
@@ -345,12 +373,13 @@ function Library:CreateStatGrid(tab, stats)
 		local card = Instance.new("Frame")
 		card.Size = UDim2.new(1 / n, -((n - 1) * 10) / n, 1, 0)
 		card.Position = UDim2.new((i - 1) / n, (i - 1) * 10 / n, 0, 0)
-		card.BackgroundColor3 = Library.Theme.Element
+		card.BackgroundColor3 = Library.Theme.SurfaceStrong
+		card.BackgroundTransparency = 0.12
 		card.BorderSizePixel = 0
 		card.Parent = grid
 		card:SetAttribute("ZenStatCard", true)
 		corner(card, 13)
-		stroke(card, Library.Theme.Border, 0.45, 1)
+		stroke(card, Library.Theme.Border, 0.55, 1)
 		hoverLift(card)
 		local rail = Instance.new("Frame")
 		rail.Size = UDim2.new(1, -18, 0, 3)
@@ -394,12 +423,13 @@ function Library:CreateStatGrid(tab, stats)
 			local card = Instance.new("Frame")
 			card.Size = UDim2.new(1 / n, -((n - 1) * 10) / n, 1, 0)
 			card.Position = UDim2.new((i - 1) / n, (i - 1) * 10 / n, 0, 0)
-			card.BackgroundColor3 = Library.Theme.Element
+			card.BackgroundColor3 = Library.Theme.SurfaceStrong
+			card.BackgroundTransparency = 0.12
 			card.BorderSizePixel = 0
 			card.Parent = grid
 			card:SetAttribute("ZenStatCard", true)
 			corner(card, 13)
-			stroke(card, Library.Theme.Border, 0.45, 1)
+			stroke(card, Library.Theme.Border, 0.55, 1)
 			local v = Instance.new("TextLabel")
 			v.BackgroundTransparency = 1
 			v.Position = UDim2.new(0, 12, 0, 10)
@@ -507,6 +537,7 @@ local function enhanceTab(tab)
 				local active = key == state.Value
 				tw(x, {
 					BackgroundColor3 = active and Library.Theme.Accent or (Library.Theme.SurfaceStrong or Library.Theme.Element),
+					BackgroundTransparency = active and 0.0 or 0.15,
 					TextColor3 = active and Library.Theme.Background or Library.Theme.Text,
 				}, 0.14)
 				if active then
@@ -517,7 +548,8 @@ local function enhanceTab(tab)
 		for i, v in ipairs(values) do
 			local b = Instance.new("TextButton")
 			b.Size = UDim2.new(1 / #values, -(6 * (#values - 1) / #values), 1, 0)
-			b.BackgroundColor3 = Library.Theme.SurfaceStrong or Library.Theme.Element
+			b.BackgroundColor3 = Library.Theme.SurfaceStrong
+			b.BackgroundTransparency = 0.15
 			b.Text = tostring(v)
 			b.TextColor3 = Library.Theme.Text
 			b.Font = Enum.Font.GothamMedium
@@ -636,7 +668,7 @@ local function enhanceTab(tab)
 		label.TextXAlignment = Enum.TextXAlignment.Left
 		label.Parent = f
 
-		local down = Instance.new("TextButton")
+local down = Instance.new("TextButton")
 		down.Size = UDim2.fromOffset(34, 34)
 		down.Position = UDim2.new(1, -118, 0.5, -17)
 		down.Text = "−"
@@ -644,9 +676,11 @@ local function enhanceTab(tab)
 		down.TextSize = 18
 		down.TextColor3 = Library.Theme.Text
 		down.BackgroundColor3 = Library.Theme.SurfaceStrong
+		down.BackgroundTransparency = 0.15
 		down.AutoButtonColor = false
 		down.Parent = f
 		corner(down, 10)
+		stroke(down, Library.Theme.Border, 0.5, 1)
 		hoverLift(down)
 
 		local valueLabel = Instance.new("TextLabel")
@@ -666,9 +700,11 @@ local function enhanceTab(tab)
 		up.TextSize = 18
 		up.TextColor3 = Library.Theme.Text
 		up.BackgroundColor3 = Library.Theme.SurfaceStrong
+		up.BackgroundTransparency = 0.15
 		up.AutoButtonColor = false
 		up.Parent = f
 		corner(up, 10)
+		stroke(up, Library.Theme.Border, 0.5, 1)
 		hoverLift(up)
 
 		local out = { Frame = f, Value = value }
