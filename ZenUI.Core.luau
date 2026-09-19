@@ -462,7 +462,7 @@ local function CardSheen(card: GuiObject)
 	return sheen
 end
 
-local function WindowShadow(target: GuiObject, parent: Instance)
+local function WindowShadow(target: GuiObject, parent: Instance, mainScale: UIScale?)
 	local shadow = Create("Frame", {
 		Name = "ZenShadow",
 		Size = UDim2.new(target.Size.X.Scale, target.Size.X.Offset + 36, target.Size.Y.Scale, target.Size.Y.Offset + 36),
@@ -475,6 +475,12 @@ local function WindowShadow(target: GuiObject, parent: Instance)
 		Parent = parent,
 	})
 	Corner(shadow, 22)
+	-- The window renders under MainScale (its own UIScale); mirror that scale
+	-- on the shadow so the backdrop stays glued to the window at any size.
+	local shadowScale: UIScale? = nil
+	if mainScale then
+		shadowScale = Create("UIScale", { Scale = mainScale.Scale, Parent = shadow })
+	end
 	AddConnection(target:GetPropertyChangedSignal("Position"):Connect(function()
 		shadow.Position = UDim2.new(target.Position.X.Scale, target.Position.X.Offset, target.Position.Y.Scale, target.Position.Y.Offset + 8)
 	end))
@@ -484,6 +490,11 @@ local function WindowShadow(target: GuiObject, parent: Instance)
 	AddConnection(target:GetPropertyChangedSignal("Visible"):Connect(function()
 		shadow.Visible = target.Visible
 	end))
+	if mainScale and shadowScale then
+		AddConnection(mainScale:GetPropertyChangedSignal("Scale"):Connect(function()
+			shadowScale.Scale = mainScale.Scale
+		end))
+	end
 	return shadow
 end
 
@@ -824,7 +835,6 @@ function Library:CreateWindow(options)
 	Library.MainFrame = MainFrame
 	Corner(MainFrame, 18)
 	Stroke(MainFrame, Library.Theme.Border, 0.08, 1.4)
-	WindowShadow(MainFrame, Library.ScreenGui)
 
 	local WindowGradient = Create("UIGradient", {
 		Rotation = 135,
@@ -839,6 +849,7 @@ function Library:CreateWindow(options)
 	pcall(function() WindowGradient:SetAttribute("ZenGradient", true) end)
 
 	local MainScale = Create("UIScale", { Scale = Library.UIScale, Parent = MainFrame })
+	WindowShadow(MainFrame, Library.ScreenGui, MainScale)
 	
 
 	local Header = Create("Frame", {
@@ -1004,7 +1015,7 @@ function Library:CreateWindow(options)
 	Corner(CollapseButton, 9); Stroke(CollapseButton, Library.Theme.Border, 0.5, 1)
 	local Collapsed = false
 
-	local TabContainer = Create("ScrollingFrame", { Name="TabContainer", Size=UDim2.new(1,-12,1,-92), Position=UDim2.new(0,6,0,78), BackgroundTransparency=1, ScrollBarThickness=0, ScrollingDirection=Enum.ScrollingDirection.Y, AutomaticCanvasSize=Enum.AutomaticSize.Y, CanvasSize=UDim2.new(0,0,0,0), Parent=Sidebar })
+	local TabContainer = Create("ScrollingFrame", { Name="TabContainer", Size=UDim2.new(1,-12,1,-166), Position=UDim2.new(0,6,0,78), BackgroundTransparency=1, ScrollBarThickness=0, ScrollingDirection=Enum.ScrollingDirection.Y, AutomaticCanvasSize=Enum.AutomaticSize.Y, CanvasSize=UDim2.new(0,0,0,0), Parent=Sidebar })
 	local TabListLayout = Create("UIListLayout", { SortOrder=Enum.SortOrder.LayoutOrder, Padding=UDim.new(0,7), HorizontalAlignment=Enum.HorizontalAlignment.Center, Parent=TabContainer })
 	AddConnection(TabListLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() TabContainer.CanvasSize=UDim2.new(0,0,0,TabListLayout.AbsoluteContentSize.Y+10) end))
 
@@ -1104,7 +1115,7 @@ function Library:CreateWindow(options)
 			entry.Icon.Position = UDim2.new(0, Collapsed and 27 or 12, 0.5, -14)
 		end
 	end))
-	local ContentTop = Create("Frame", { Size=UDim2.new(1,-28,0,56), Position=UDim2.new(0,14,0,12), BackgroundColor3=Library.Theme.Surface or Library.Theme.Element, BackgroundTransparency=0.10, BorderSizePixel=0, Parent=ContentContainer })
+	local ContentTop = Create("Frame", { Name="ContentTop", Size=UDim2.new(1,-28,0,56), Position=UDim2.new(0,14,0,12), BackgroundColor3=Library.Theme.Surface or Library.Theme.Element, BackgroundTransparency=0.10, BorderSizePixel=0, Parent=ContentContainer })
 	Corner(ContentTop,12); Stroke(ContentTop,Library.Theme.Border,0.45,1)
 	local TopSheen = Create("Frame", { Size=UDim2.new(0,2.4,1,-12), Position=UDim2.new(0,6,0,6), BackgroundColor3=Library.Theme.Accent, BackgroundTransparency=0.18, BorderSizePixel=0, Parent=ContentTop })
 	Corner(TopSheen,2)
@@ -1136,7 +1147,7 @@ function Library:CreateWindow(options)
 		WindowState.Minimized=true
 		Sidebar.Visible=false
 		ContentContainer.Visible=false
-		SpringTween(MainFrame,{Size=UDim2.new(0,BaseWindowWidth,0,62)},0.34)
+		SpringTween(MainFrame,{Size=UDim2.new(0,BaseWindowWidth,0,78)},0.34)
 	end
 	local function CloseWindow()
 		if WindowState.Closed then return end
@@ -1278,8 +1289,8 @@ function Library:CreateWindow(options)
 
 		local Page = Create("ScrollingFrame", {
 			Name = TabName .. "Page",
-			Size = UDim2.new(1, 0, 1, -60),
-			Position = UDim2.new(0, 0, 0, 60),
+			Size = UDim2.new(1, -4, 1, -80),
+			Position = UDim2.new(0, 2, 0, 74),
 			BackgroundTransparency = 1,
 			ScrollBarThickness = 4,
 			ScrollingDirection = Enum.ScrollingDirection.Y,
