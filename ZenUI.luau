@@ -18,7 +18,7 @@ local OFFICIAL_AUTHOR = "PaveF"
 local OFFICIAL_VERSION = "3.0.0"
 
 -- Pinned to the content commit that contains all four files (see git log).
-local CONTENT_COMMIT = "647f80d844d9896d5a8884de0e00e80b75fab27a"
+local CONTENT_COMMIT = "d63fe3bbfdfb2f5195118906e036838dff3f02d9"
 
 local CORE = RAW_ROOT .. "/" .. CONTENT_COMMIT .. "/ZenUI.Core.luau"
 local SKIN = RAW_ROOT .. "/" .. CONTENT_COMMIT .. "/ZenUI.ApexVisuals.luau"
