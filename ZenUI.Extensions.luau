@@ -99,7 +99,7 @@ function Library:CreateCommandCenter(o)
 	box.Name = "ZenCommandCenter"
 	box.Size = UDim2.new(0, math.clamp(o.Width or 480, 280, 680), 0, 48)
 	box.AnchorPoint = Vector2.new(0.5, 0)
-	box.Position = UDim2.new(0.5, 0, 0, o.Top or 72)
+	box.Position = UDim2.new(0.5, 0, 0, o.Top or 150)
 	box.BackgroundColor3 = Library.Theme.Element
 	box.TextColor3 = Library.Theme.Text
 	box.PlaceholderColor3 = Library.Theme.TextMuted
@@ -183,8 +183,15 @@ function Library:CreateStatusBar(o)
 	local p = o.Parent or self.MainFrame
 	local bar = track(Instance.new("Frame"))
 	bar.Name = "ZenStatusBar"
-	bar.Size = UDim2.new(1, -24, 0, 36)
-	bar.Position = o.Position or UDim2.new(0, 12, 1, -48)
+	if o.FullWidth then
+		bar.Size = UDim2.new(1, -24, 0, 36)
+		bar.Position = o.Position or UDim2.new(0, 12, 1, -48)
+	else
+		-- Compact chip, anchored to the content area's bottom-right, so it
+		-- never smears over the sidebar footer, page content or resize grip.
+		bar.Size = UDim2.new(0, 272, 0, 36)
+		bar.Position = o.Position or UDim2.new(1, -318, 1, -56)
+	end
 	bar.BackgroundColor3 = Library.Theme.SurfaceStrong or Library.Theme.Element
 	bar.BorderSizePixel = 0
 	bar.Parent = p

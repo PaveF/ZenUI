@@ -1731,7 +1731,7 @@ local ReopenButton = Create("TextButton", { Name="ReopenButton", Size=UDim2.new(
 
 			local SelectedLabel = Create("TextLabel", {
 				Size = UDim2.new(0, 180, 1, 0),
-				Position = UDim2.new(1, -60, 0, 0),
+				Position = UDim2.new(1, -240, 0, 0),
 				BackgroundTransparency = 1,
 				Text = type(Dropdown.Value) == "table" and table.concat(Dropdown.Value, ", ") or tostring(Dropdown.Value or ""),
 				TextColor3 = Library.Theme.Accent,
