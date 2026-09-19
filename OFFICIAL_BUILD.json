@@ -1,13 +1,18 @@
 {
   "project": "ZenUI",
   "author": "PaveF",
-  "repository": "https://github.com/PaveF/ZenUI",
+  "repository": "https://github.com/vxa-020/ZenUI",
   "license": "ZenUI Source-Available License v1.0",
   "official_source_file": "ZenUI.luau",
-  "official_version": "2.4.0",
-  "build_id": "ZENUI-APEX-2.4.0",
-  "provenance_id": "ZENUI-PROV-2.4.0-cfe22435-78778774",
-  "core_commit": "cfe224355bba96ac99dd5fc775ce474510dba307",
-  "extension_commit": "78778774df0031c720e2152e5163dfec3595f606",
+  "official_version": "3.0.0",
+  "build_id": "ZENUI-APEX-3.0.0",
+  "provenance_id": "ZENUI-PROV-3.0.0",
+  "content_commit": "UPDATE_ME",
+  "files": [
+    "ZenUI.luau",
+    "ZenUI.Core.luau",
+    "ZenUI.ApexVisuals.luau",
+    "ZenUI.Extensions.luau"
+  ],
   "entrypoint_note": "The source blob SHA is intentionally kept as an external audit field because embedding a file's own final blob SHA would be self-referential."
 }

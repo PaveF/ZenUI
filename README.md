@@ -33,7 +33,7 @@ ZenUI is a polished, animated Roblox/Luau UI library with a stable classic contr
 
 ```lua
 local Library = loadstring(game:HttpGet(
-    "https://raw.githubusercontent.com/PaveF/ZenUI/refs/heads/main/ZenUI.luau"
+    "https://raw.githubusercontent.com/vxa-020/ZenUI/main/ZenUI.luau"
 ))()
 
 local Lib = Library.new({
